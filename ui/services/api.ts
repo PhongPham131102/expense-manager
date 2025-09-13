@@ -1,4 +1,5 @@
 import { Platform } from 'react-native';
+import AsyncStorage from '@react-native-async-storage/async-storage';
 
 // API Configuration
 const API_BASE_URL = Platform.OS === 'ios'
@@ -21,7 +22,7 @@ export interface RegisterRequest {
 export interface AuthResponse {
     accessToken: string;
     userId: string;
-    status: string;
+    status: number;
     message: string;
     role: any;
     permission: any;
@@ -31,8 +32,18 @@ export interface AuthResponse {
     };
 }
 
+export interface RegisterResponse {
+    status: number;
+    messsage: string; // Note: backend has typo "messsage"
+    data: {
+        username: string;
+        name: string;
+        role: any;
+    };
+}
+
 export interface ApiError {
-    status: string;
+    status: number;
     message: string;
     column?: string;
 }
@@ -44,17 +55,37 @@ class ApiService {
         this.baseURL = API_BASE_URL;
     }
 
+    private async getAuthToken(): Promise<string | null> {
+        try {
+            return await AsyncStorage.getItem('accessToken');
+        } catch (error) {
+            console.error('Error getting auth token:', error);
+            return null;
+        }
+    }
+
     private async request<T>(
         endpoint: string,
-        options: RequestInit = {}
+        options: RequestInit = {},
+        requireAuth: boolean = false
     ): Promise<T> {
         const url = `${this.baseURL}${endpoint}`;
 
+        const headers: Record<string, string> = {
+            'Content-Type': 'application/json',
+            ...options.headers,
+        };
+
+        // Add Authorization header if required
+        if (requireAuth) {
+            const token = await this.getAuthToken();
+            if (token) {
+                headers['Authorization'] = `Bearer ${token}`;
+            }
+        }
+
         const config: RequestInit = {
-            headers: {
-                'Content-Type': 'application/json',
-                ...options.headers,
-            },
+            headers,
             ...options,
         };
 
@@ -62,45 +93,85 @@ class ApiService {
             const response = await fetch(url, config);
 
             if (!response.ok) {
-                const errorData = await response.json();
-                throw new Error(errorData.message || 'API request failed');
+                let errorMessage = `HTTP ${response.status}: ${response.statusText}`;
+                let errorStatus = response.status;
+                let errorColumn = undefined;
+
+                try {
+                    const errorData = await response.json();
+
+                    // Handle backend StatusResponse codes
+                    if (errorData.status) {
+                        switch (errorData.status) {
+                            case 5: // EXISTS_USERNAME
+                                errorMessage = 'Tên đăng nhập đã tồn tại';
+                                break;
+                            case 6: // EXISTS_EMAIL
+                                errorMessage = 'Email đã được sử dụng';
+                                break;
+                            case 8: // NOT_EXISTS_ROLE
+                                errorMessage = 'Vai trò không tồn tại';
+                                break;
+                            case 9: // USERNAME_OR_PASSWORD_IS_NOT_CORRECT
+                                errorMessage = 'Tên đăng nhập hoặc mật khẩu không đúng';
+                                break;
+                            case 10: // PASSWORD_INCORRECT
+                                errorMessage = 'Mật khẩu không đúng';
+                                break;
+                            default:
+                                errorMessage = errorData.message || errorMessage;
+                        }
+                    } else if (errorData.message && Array.isArray(errorData.message)) {
+                        // Handle NestJS validation error format
+                        errorMessage = errorData.message.join(', ');
+                    } else if (errorData.message) {
+                        errorMessage = errorData.message;
+                    }
+
+                    errorStatus = errorData.status || errorData.statusCode || errorStatus;
+                } catch (jsonError) {
+                    // If response is not JSON (e.g., HTML error page), use status text
+                    console.log('Response is not JSON, using status text');
+                }
+
+                const error = new Error(errorMessage);
+                (error as any).status = errorStatus;
+                (error as any).column = errorColumn;
+                throw error;
             }
 
             return await response.json();
         } catch (error) {
-            console.error('API Error:', error);
+            // Don't log to console to avoid duplicate error display
             throw error;
         }
     }
 
     // Authentication APIs
     async login(credentials: LoginRequest): Promise<AuthResponse> {
-        return this.request<AuthResponse>('/auth/login', {
+        return this.request<AuthResponse>('/auths/sign-in', {
             method: 'POST',
             body: JSON.stringify(credentials),
         });
     }
 
-    async register(userData: RegisterRequest): Promise<AuthResponse> {
-        return this.request<AuthResponse>('/auth/signup', {
+    async register(userData: RegisterRequest): Promise<RegisterResponse> {
+        return this.request<RegisterResponse>('/auths/sign-up', {
             method: 'POST',
             body: JSON.stringify(userData),
         });
     }
 
-    async refreshToken(refreshToken: string): Promise<{ accessToken: string }> {
-        return this.request<{ accessToken: string }>('/auth/refresh-token', {
-            method: 'POST',
-            headers: {
-                'Authorization': `Bearer ${refreshToken}`,
-            },
+    async refreshToken(): Promise<{ accessToken: string }> {
+        return this.request<{ accessToken: string }>('/auths/refresh-token', {
+            method: 'GET',
         });
     }
 
     async logout(): Promise<void> {
-        return this.request<void>('/auth/logout', {
+        return this.request<void>('/auths/logout', {
             method: 'POST',
-        });
+        }, true); // requireAuth = true
     }
 
     // User APIs
@@ -112,6 +183,7 @@ class ApiService {
     async healthCheck(): Promise<{ status: string }> {
         return this.request<{ status: string }>('/health');
     }
+
 }
 
 export const apiService = new ApiService();

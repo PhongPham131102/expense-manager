@@ -5,7 +5,6 @@ import {
   StyleSheet,
   ScrollView,
   TouchableOpacity,
-  Alert,
   KeyboardAvoidingView,
   Platform,
 } from "react-native";
@@ -47,15 +46,14 @@ export default function LoginScreen() {
     try {
       await login(username, password);
     } catch (error: any) {
-      Alert.alert(
-        "Lỗi",
-        error.message || "Đăng nhập thất bại. Vui lòng thử lại."
-      );
+      // Error handling is done by AuthContext with toast
+      console.log("Login error:", error);
     }
   };
 
   const handleForgotPassword = () => {
-    Alert.alert("Quên mật khẩu", "Tính năng này sẽ được triển khai sớm");
+    // TODO: Implement forgot password functionality
+    console.log("Forgot password clicked");
   };
 
   return (

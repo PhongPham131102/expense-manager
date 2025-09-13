@@ -1,24 +1,29 @@
 import React, { useEffect } from "react";
 import { View, ActivityIndicator, StyleSheet } from "react-native";
 import { router } from "expo-router";
-import { useAuth } from "@/contexts/AuthContext";
+import { useAppSelector } from "@/store/hooks";
 
 interface AuthGuardProps {
   children: React.ReactNode;
 }
 
 export const AuthGuard: React.FC<AuthGuardProps> = ({ children }) => {
-  const { user, isLoading, isAuthenticated } = useAuth();
+  const { isLoading, isAuthenticated } = useAppSelector((state) => state.auth);
 
   useEffect(() => {
     if (!isLoading) {
-      if (isAuthenticated) {
-        // User is logged in, navigate to main app
-        router.replace("/(tabs)");
-      } else {
-        // User is not logged in, navigate to onboarding
-        router.replace("/onboarding");
-      }
+      // Use setTimeout to ensure navigation happens after component is fully mounted
+      const timer = setTimeout(() => {
+        if (isAuthenticated) {
+          // User is logged in, navigate to main app
+          router.replace("/(tabs)");
+        } else {
+          // User is not logged in, navigate to onboarding
+          router.replace("/onboarding");
+        }
+      }, 100);
+
+      return () => clearTimeout(timer);
     }
   }, [isAuthenticated, isLoading]);
 

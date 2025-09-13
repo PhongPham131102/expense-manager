@@ -1,19 +1,9 @@
 import React from "react";
-import {
-  View,
-  Text,
-  StyleSheet,
-  TouchableOpacity,
-  Dimensions,
-  StatusBar,
-} from "react-native";
+import { View, StyleSheet } from "react-native";
 import { router } from "expo-router";
-import { Ionicons } from "@expo/vector-icons";
 
 import { CustomButton } from "@/components/auth/CustomButton";
 import { LogoHeader } from "@/components/auth/LogoHeader";
-
-const { width, height } = Dimensions.get("window");
 
 export default function OnboardingScreen() {
   const handleLogin = () => {
@@ -26,8 +16,6 @@ export default function OnboardingScreen() {
 
   return (
     <View style={styles.container}>
-      <StatusBar style="light" backgroundColor="#2ECC71" />
-
       {/* Status Bar Background */}
       <View style={styles.statusBar} />
 

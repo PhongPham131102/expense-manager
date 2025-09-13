@@ -1,13 +1,14 @@
-import React, {
-  createContext,
-  useContext,
-  useState,
-  useEffect,
-  ReactNode,
-} from "react";
-import AsyncStorage from "@react-native-async-storage/async-storage";
-// import { apiService, AuthResponse } from "@/services/api";
+import React, { createContext, useContext, useEffect, ReactNode } from "react";
 import { router } from "expo-router";
+import { useAppDispatch, useAppSelector } from "@/store/hooks";
+import {
+  loginUser,
+  registerUser,
+  logoutUser,
+  refreshUserToken,
+  loadUserFromStorage,
+} from "@/store/slices/authSlice";
+import { showToast } from "@/utils/toast";
 
 interface User {
   id: string;
@@ -22,10 +23,12 @@ interface AuthContextType {
   user: User | null;
   isLoading: boolean;
   isAuthenticated: boolean;
+  error: string | null;
   login: (username: string, password: string) => Promise<void>;
   register: (userData: any) => Promise<void>;
   logout: () => Promise<void>;
   refreshToken: () => Promise<void>;
+  clearError: () => void;
 }
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
@@ -43,133 +46,89 @@ interface AuthProviderProps {
 }
 
 export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
-  const [user, setUser] = useState<User | null>(null);
-  const [isLoading, setIsLoading] = useState(true);
-
-  const isAuthenticated = !!user;
+  const dispatch = useAppDispatch();
+  const { user, isLoading, isAuthenticated, error } = useAppSelector(
+    (state) => state.auth
+  );
 
   useEffect(() => {
-    checkAuthState();
-  }, []);
+    // Load user from storage on app start
+    dispatch(loadUserFromStorage());
+  }, [dispatch]);
 
-  const checkAuthState = async () => {
-    try {
-      const token = await AsyncStorage.getItem("accessToken");
-      const userData = await AsyncStorage.getItem("userData");
-
-      if (token && userData) {
-        const parsedUserData = JSON.parse(userData);
-        setUser(parsedUserData);
-      }
-    } catch (error) {
-      console.error("Error checking auth state:", error);
-    } finally {
-      setIsLoading(false);
-    }
-  };
+  // Navigation logic is handled by AuthGuard component
 
   const login = async (username: string, password: string) => {
     try {
-      setIsLoading(true);
-
-      // Mock API call - replace with real API when backend is ready
-      await new Promise((resolve) => setTimeout(resolve, 1000)); // Simulate API delay
-
-      const mockResponse = {
-        accessToken: "mock-access-token",
-        userId: "mock-user-id",
-        userData: {
-          username: username,
-          name: "Mock User",
-        },
-        role: { name: "user" },
-        permission: [],
-      };
-
-      // Store tokens and user data
-      await AsyncStorage.setItem("accessToken", mockResponse.accessToken);
-      await AsyncStorage.setItem(
-        "userData",
-        JSON.stringify(mockResponse.userData)
-      );
-
-      setUser({
-        id: mockResponse.userId,
-        username: mockResponse.userData.username,
-        name: mockResponse.userData.name,
-        role: mockResponse.role,
-        permission: mockResponse.permission,
-      });
-
-      // Navigate to main app
+      await dispatch(loginUser({ username, password })).unwrap();
+      showToast.success("Đăng nhập thành công!");
+      // Navigate to dashboard after successful login
       router.replace("/(tabs)");
-    } catch (error) {
-      console.error("Login error:", error);
+    } catch (error: any) {
+      // Extract clean error message, remove "API Error: Error:" prefix
+      let errorMessage = error?.message || "Đăng nhập thất bại";
+      if (errorMessage.includes("API Error: Error:")) {
+        errorMessage = errorMessage.replace("API Error: Error:", "").trim();
+      }
+      showToast.error(errorMessage, "Lỗi đăng nhập");
       throw error;
-    } finally {
-      setIsLoading(false);
     }
   };
 
   const register = async (userData: any) => {
     try {
-      setIsLoading(true);
-
-      // Mock API call - replace with real API when backend is ready
-      await new Promise((resolve) => setTimeout(resolve, 1000)); // Simulate API delay
-
-      // After successful registration, redirect to login
+      await dispatch(registerUser(userData)).unwrap();
+      showToast.success("Đăng ký thành công! Vui lòng đăng nhập.");
+      // Navigate to login screen after successful registration
       router.replace("/login");
-    } catch (error) {
-      console.error("Register error:", error);
+    } catch (error: any) {
+      // Extract clean error message, remove "API Error: Error:" prefix
+      let errorMessage = error?.message || "Đăng ký thất bại";
+      if (errorMessage.includes("API Error: Error:")) {
+        errorMessage = errorMessage.replace("API Error: Error:", "").trim();
+      }
+      showToast.error(errorMessage, "Lỗi đăng ký");
       throw error;
-    } finally {
-      setIsLoading(false);
     }
   };
 
   const logout = async () => {
     try {
-      // Mock logout - replace with real API when backend is ready
-      console.log("Logout called");
+      await dispatch(logoutUser()).unwrap();
+      showToast.success("Đăng xuất thành công!");
+      // Navigate to onboarding after successful logout
+      router.replace("/onboarding");
     } catch (error) {
-      console.error("Logout error:", error);
-    } finally {
-      // Clear local storage
-      await AsyncStorage.multiRemove([
-        "accessToken",
-        "userData",
-        "refreshToken",
-      ]);
-      setUser(null);
-
-      // Navigate to auth
+      showToast.error("Có lỗi xảy ra khi đăng xuất");
+      // Even if logout fails, navigate to onboarding
       router.replace("/onboarding");
     }
   };
 
   const refreshToken = async () => {
     try {
-      const refreshToken = await AsyncStorage.getItem("refreshToken");
-      if (refreshToken) {
-        // Mock refresh token - replace with real API when backend is ready
-        console.log("Refresh token called");
-      }
+      await dispatch(refreshUserToken()).unwrap();
     } catch (error) {
-      console.error("Refresh token error:", error);
+      showToast.error("Phiên đăng nhập đã hết hạn");
       // If refresh fails, logout user
       await logout();
     }
+  };
+
+  const clearError = () => {
+    dispatch({ type: "auth/clearError" });
   };
 
   const value: AuthContextType = {
     user,
     isLoading,
     isAuthenticated,
+    error,
     login,
     register,
     logout,
     refreshToken,
+    clearError,
   };
 
   return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;

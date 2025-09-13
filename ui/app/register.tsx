@@ -5,7 +5,6 @@ import {
   StyleSheet,
   ScrollView,
   TouchableOpacity,
-  Alert,
   KeyboardAvoidingView,
   Platform,
 } from "react-native";
@@ -80,21 +79,10 @@ export default function RegisterScreen() {
 
     try {
       await register(formData);
-      Alert.alert(
-        "Đăng ký thành công!",
-        "Tài khoản của bạn đã được tạo. Vui lòng đăng nhập.",
-        [
-          {
-            text: "OK",
-            onPress: () => router.replace("/login"),
-          },
-        ]
-      );
+      // Success handling is done by AuthContext with toast
     } catch (error: any) {
-      Alert.alert(
-        "Lỗi",
-        error.message || "Đăng ký thất bại. Vui lòng thử lại."
-      );
+      // Error handling is done by AuthContext with toast
+      console.log("Register error:", error);
     }
   };
 
