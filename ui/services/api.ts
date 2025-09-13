@@ -69,6 +69,58 @@ export interface UpdateProfileResponse {
     };
 }
 
+export interface CreateTransactionRequest {
+    amount: number;
+    category: string;
+    categoryId: string;
+    categoryName: string;
+    categoryIcon: string;
+    categoryColor: string;
+    isIncome: boolean;
+    note?: string;
+    date: string;
+    time: string;
+    image?: string;
+}
+
+export interface TransactionResponse {
+    id: string;
+    userId: string;
+    amount: number;
+    category: string;
+    categoryId: string;
+    categoryName: string;
+    categoryIcon: string;
+    categoryColor: string;
+    isIncome: boolean;
+    note: string;
+    date: Date;
+    time: Date;
+    image?: string;
+    createdAt: Date;
+    updatedAt: Date;
+}
+
+export interface CreateTransactionResponse {
+    status: number;
+    message: string;
+    data?: TransactionResponse;
+}
+
+export interface GetTransactionsResponse {
+    status: number;
+    message: string;
+    data?: {
+        transactions: TransactionResponse[];
+        pagination: {
+            page: number;
+            limit: number;
+            total: number;
+            totalPages: number;
+        };
+    };
+}
+
 export interface ApiError {
     status: number;
     message: string;
@@ -217,6 +269,26 @@ class ApiService {
         return this.request<UpdateProfileResponse>('/user/update-profile', {
             method: 'PUT',
             body: JSON.stringify(profileData),
+        }, true); // requireAuth = true
+    }
+
+    // Transaction APIs
+    async createTransaction(transactionData: CreateTransactionRequest): Promise<CreateTransactionResponse> {
+        return this.request<CreateTransactionResponse>('/transactions', {
+            method: 'POST',
+            body: JSON.stringify(transactionData),
+        }, true); // requireAuth = true
+    }
+
+    async getTransactions(page: number = 1, limit: number = 10): Promise<GetTransactionsResponse> {
+        return this.request<GetTransactionsResponse>(`/transactions?page=${page}&limit=${limit}`, {
+            method: 'GET',
+        }, true); // requireAuth = true
+    }
+
+    async getTransactionById(transactionId: string): Promise<CreateTransactionResponse> {
+        return this.request<CreateTransactionResponse>(`/transactions/${transactionId}`, {
+            method: 'GET',
         }, true); // requireAuth = true
     }
 

@@ -3,6 +3,7 @@ export const StatusResponse = {
   FAIL: 2,
   FOBBIDEN: 3,
   NOTFOUND: 4,
+  NOT_FOUND: 4, // Alias for NOTFOUND
   EXISTS_USERNAME: 5,
   EXISTS_EMAIL: 6,
   NOT_EXISTS_ROLE: 8,
@@ -10,4 +11,5 @@ export const StatusResponse = {
   PASSWORD_INCORRECT: 10,
   NOT_EXISTS_USER: 11,
   BAD_REQUEST: 12,
+  INTERNAL_SERVER_ERROR: 500,
 };

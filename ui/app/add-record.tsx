@@ -15,6 +15,7 @@ import { router } from "expo-router";
 import { showToast } from "@/utils/toast";
 import * as ImagePicker from "expo-image-picker";
 import DateTimePicker from "@react-native-community/datetimepicker";
+import { apiService } from "@/services/api";
 
 // Global callback function
 let categorySelectionCallback: ((category: any) => void) | null = null;
@@ -186,7 +187,7 @@ export default function AddRecordScreen() {
     return true;
   };
 
-  const handleSave = () => {
+  const handleSave = async () => {
     // Validate all fields
     if (!validateForm()) {
       return;
@@ -194,20 +195,38 @@ export default function AddRecordScreen() {
 
     const numericAmount = getNumericAmount();
 
-    console.log("Saving transaction:", {
-      amount: numericAmount,
-      formattedAmount: amount,
-      category: category?.name,
-      categoryId: category?.id,
-      note: note.trim(),
-      isIncome,
-      date: selectedDate.toISOString(),
-      time: selectedTime.toISOString(),
-      image: selectedImage,
-    });
+    try {
+      showToast.success("Đang lưu giao dịch...");
 
-    showToast.success("Đã thêm giao dịch thành công");
-    router.back();
+      const transactionData = {
+        amount: parseInt(numericAmount),
+        category: category?.name || "",
+        categoryId: category?.id || "",
+        categoryName: category?.name || "",
+        categoryIcon: category?.icon || "",
+        categoryColor: category?.color || "",
+        isIncome,
+        note: note.trim(),
+        date: selectedDate.toISOString(),
+        time: selectedTime.toISOString(),
+        image: selectedImage || undefined,
+      };
+
+      console.log("Saving transaction:", transactionData);
+
+      const response = await apiService.createTransaction(transactionData);
+
+      if (response.status === 1) {
+        showToast.success(response.message || "Đã thêm giao dịch thành công");
+        router.back();
+      } else {
+        showToast.error(response.message || "Có lỗi xảy ra khi lưu giao dịch");
+      }
+    } catch (error: any) {
+      console.error("Error saving transaction:", error);
+      const errorMessage = error.message || "Có lỗi xảy ra khi lưu giao dịch";
+      showToast.error(errorMessage);
+    }
   };
 
   const handleCategorySelect = () => {

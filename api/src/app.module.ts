@@ -12,6 +12,7 @@ import { JwtModule } from '@nestjs/jwt';
 import { LoggingInterceptor } from './interceptors/save-logging.interceptor';
 import { AuthModule } from './modules/auth/auth.module';
 import { DatabaseModule } from './database/database.module';
+import { TransactionModule } from './modules/transaction/transaction.module';
 
 @Module({
   imports: [
@@ -27,6 +28,7 @@ import { DatabaseModule } from './database/database.module';
     RoleModule,
     ActionHistoryModule,
     AuthModule,
+    TransactionModule,
   ],
   controllers: [],
   providers: [
