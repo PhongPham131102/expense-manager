@@ -40,6 +40,15 @@ export default function RootLayout() {
               name="edit-profile"
               options={{ headerShown: false }}
             />
+            <Stack.Screen name="add-record" options={{ headerShown: false }} />
+            <Stack.Screen
+              name="add-record-simple"
+              options={{ headerShown: false }}
+            />
+            <Stack.Screen
+              name="select-category"
+              options={{ headerShown: false }}
+            />
             <Stack.Screen name="(tabs)" options={{ headerShown: false }} />
             <Stack.Screen
               name="modal"

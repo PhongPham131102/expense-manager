@@ -8,6 +8,7 @@ import {
   StatusBar,
 } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
+import { router } from "expo-router";
 import { useAppSelector } from "@/store/hooks";
 import { mockExpenseData } from "@/data/mockData";
 import { BalanceCard } from "@/components/dashboard/BalanceCard";
@@ -29,9 +30,24 @@ export default function DashboardScreen() {
         <View style={styles.statusBar} />
         <View style={styles.headerContent}>
           <Text style={styles.greeting}>Chào {user?.name || "Người dùng"}</Text>
-          <TouchableOpacity style={styles.notificationButton}>
-            <Ionicons name="notifications-outline" size={24} color="#FFFFFF" />
-          </TouchableOpacity>
+          <View style={styles.headerButtons}>
+            <TouchableOpacity
+              style={styles.addButton}
+              onPress={() => {
+                console.log("Navigating to add-record...");
+                router.push("/add-record");
+              }}
+            >
+              <Ionicons name="add" size={24} color="#FFFFFF" />
+            </TouchableOpacity>
+            <TouchableOpacity style={styles.notificationButton}>
+              <Ionicons
+                name="notifications-outline"
+                size={24}
+                color="#FFFFFF"
+              />
+            </TouchableOpacity>
+          </View>
         </View>
       </View>
 
@@ -90,6 +106,16 @@ const styles = StyleSheet.create({
     justifyContent: "space-between",
     alignItems: "center",
     paddingHorizontal: 20,
+  },
+  headerButtons: {
+    flexDirection: "row",
+    alignItems: "center",
+  },
+  addButton: {
+    padding: 8,
+    borderRadius: 20,
+    backgroundColor: "rgba(255, 255, 255, 0.2)",
+    marginRight: 8,
   },
   greeting: {
     fontSize: 22,
