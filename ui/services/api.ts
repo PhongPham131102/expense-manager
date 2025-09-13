@@ -280,8 +280,17 @@ class ApiService {
         }, true); // requireAuth = true
     }
 
-    async getTransactions(page: number = 1, limit: number = 10): Promise<GetTransactionsResponse> {
-        return this.request<GetTransactionsResponse>(`/transactions?page=${page}&limit=${limit}`, {
+    async getTransactions(
+        page: number = 1,
+        limit: number = 10,
+        startDate?: string,
+        endDate?: string
+    ): Promise<GetTransactionsResponse> {
+        let url = `/transactions?page=${page}&limit=${limit}`;
+        if (startDate) url += `&startDate=${startDate}`;
+        if (endDate) url += `&endDate=${endDate}`;
+
+        return this.request<GetTransactionsResponse>(url, {
             method: 'GET',
         }, true); // requireAuth = true
     }
@@ -291,6 +300,20 @@ class ApiService {
             method: 'GET',
         }, true); // requireAuth = true
     }
+
+    async updateTransaction(transactionId: string, updateData: CreateTransactionRequest): Promise<CreateTransactionResponse> {
+        return this.request<CreateTransactionResponse>(`/transactions/${transactionId}`, {
+            method: 'PUT',
+            body: JSON.stringify(updateData),
+        }, true); // requireAuth = true
+    }
+
+    async deleteTransaction(transactionId: string): Promise<{ status: number; message: string }> {
+        return this.request<{ status: number; message: string }>(`/transactions/${transactionId}`, {
+            method: 'DELETE',
+        }, true); // requireAuth = true
+    }
+
 
     // Health check
     async healthCheck(): Promise<{ status: string }> {

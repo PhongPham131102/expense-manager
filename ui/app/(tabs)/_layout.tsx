@@ -1,9 +1,11 @@
-import { Tabs } from "expo-router";
+import { Tabs, useRouter } from "expo-router";
 import React from "react";
 import { Ionicons } from "@expo/vector-icons";
 import { TouchableOpacity, View, StyleSheet } from "react-native";
 
 export default function TabLayout() {
+  const router = useRouter();
+
   return (
     <Tabs
       screenOptions={{
@@ -38,7 +40,7 @@ export default function TabLayout() {
         }}
       />
       <Tabs.Screen
-        name="explore"
+        name="records"
         options={{
           title: "Ghi chép",
           tabBarIcon: ({ color, focused }) => (
@@ -64,8 +66,7 @@ export default function TabLayout() {
               {...props}
               style={styles.addButtonContainer}
               onPress={() => {
-                // TODO: Navigate to add transaction screen
-                console.log("Add transaction");
+                router.push("/add-record?refreshCallback=true");
               }}
             />
           ),
@@ -103,13 +104,13 @@ export default function TabLayout() {
 
 const styles = StyleSheet.create({
   addButton: {
-    width: 56,
-    height: 56,
-    borderRadius: 28,
-    backgroundColor: "#2ECC71",
+    width: 60,
+    height: 60,
+    borderRadius: 30,
+    backgroundColor: "#27AE60",
     alignItems: "center",
     justifyContent: "center",
-    shadowColor: "#2ECC71",
+    shadowColor: "#27AE60",
     shadowOffset: { width: 0, height: 4 },
     shadowOpacity: 0.3,
     shadowRadius: 8,
@@ -119,5 +120,6 @@ const styles = StyleSheet.create({
     alignItems: "center",
     justifyContent: "center",
     marginTop: -10,
+    flex: 1,
   },
 });

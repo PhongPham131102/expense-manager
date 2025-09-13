@@ -9,9 +9,10 @@ import {
   StatusBar,
   Image,
   Platform,
+  Alert,
 } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
-import { router } from "expo-router";
+import { router, useLocalSearchParams } from "expo-router";
 import { showToast } from "@/utils/toast";
 import * as ImagePicker from "expo-image-picker";
 import DateTimePicker from "@react-native-community/datetimepicker";
@@ -33,12 +34,23 @@ export const callCategorySelectionCallback = (category: any) => {
 };
 
 export default function AddRecordScreen() {
+  const { recordId, refreshCallback } = useLocalSearchParams<{
+    recordId?: string;
+    refreshCallback?: string;
+  }>();
+  const isEdit = !!recordId;
+
+  const [loading, setLoading] = useState(false);
+  const [saving, setSaving] = useState(false);
+  const [transaction, setTransaction] = useState<any>(null);
+
   const [amount, setAmount] = useState("");
   const [category, setCategory] = useState<{
     id: string;
     name: string;
     icon: string;
     color: string;
+    isIncome?: boolean;
   } | null>(null);
   const [note, setNote] = useState("");
   const [selectedDate, setSelectedDate] = useState(new Date());
@@ -61,6 +73,56 @@ export default function AddRecordScreen() {
       categorySelectionCallback = null;
     };
   }, []);
+
+  useEffect(() => {
+    if (isEdit && recordId) {
+      loadTransaction();
+    }
+  }, [isEdit, recordId]);
+
+  const triggerRefresh = () => {
+    // Trigger refresh in parent component
+    if (refreshCallback) {
+      // Use global callback to refresh records
+      (global as any).refreshRecordsCallback?.();
+    }
+  };
+
+  const loadTransaction = async () => {
+    try {
+      setLoading(true);
+      const response = await apiService.getTransactionById(recordId!);
+
+      if (response.status === 1 && response.data) {
+        const transactionData = response.data;
+        setTransaction(transactionData);
+
+        // Populate form with existing data
+        setAmount(formatAmount(transactionData.amount.toString()));
+        setCategory({
+          id: transactionData.categoryId,
+          name: transactionData.categoryName,
+          icon: transactionData.categoryIcon,
+          color: transactionData.categoryColor,
+          isIncome: transactionData.isIncome,
+        });
+        setNote(transactionData.note || "");
+        setSelectedDate(new Date(transactionData.date));
+        setSelectedTime(new Date(transactionData.time));
+        setSelectedImage(transactionData.image || null);
+        setIsIncome(transactionData.isIncome);
+      } else {
+        showToast.error("Không thể tải thông tin giao dịch");
+        router.back();
+      }
+    } catch (error) {
+      console.error("Error loading transaction:", error);
+      showToast.error("Có lỗi xảy ra khi tải dữ liệu");
+      router.back();
+    } finally {
+      setLoading(false);
+    }
+  };
 
   const formatDate = (date: Date) => {
     const today = new Date();
@@ -214,19 +276,69 @@ export default function AddRecordScreen() {
 
       console.log("Saving transaction:", transactionData);
 
-      const response = await apiService.createTransaction(transactionData);
+      let response;
+      if (isEdit) {
+        response = await apiService.updateTransaction(
+          recordId!,
+          transactionData
+        );
+      } else {
+        response = await apiService.createTransaction(transactionData);
+      }
 
       if (response.status === 1) {
-        showToast.success(response.message || "Đã thêm giao dịch thành công");
+        showToast.success(
+          response.message ||
+            (isEdit
+              ? "Đã cập nhật giao dịch thành công"
+              : "Đã thêm giao dịch thành công")
+        );
+        triggerRefresh();
         router.back();
       } else {
-        showToast.error(response.message || "Có lỗi xảy ra khi lưu giao dịch");
+        showToast.error(
+          response.message ||
+            (isEdit
+              ? "Có lỗi xảy ra khi cập nhật giao dịch"
+              : "Có lỗi xảy ra khi lưu giao dịch")
+        );
       }
     } catch (error: any) {
       console.error("Error saving transaction:", error);
       const errorMessage = error.message || "Có lỗi xảy ra khi lưu giao dịch";
       showToast.error(errorMessage);
     }
+  };
+
+  const handleDelete = () => {
+    Alert.alert("Xác nhận xóa", "Bạn có chắc chắn muốn xóa giao dịch này?", [
+      { text: "Hủy", style: "cancel" },
+      {
+        text: "Xóa",
+        style: "destructive",
+        onPress: async () => {
+          try {
+            setSaving(true);
+            const response = await apiService.deleteTransaction(recordId!);
+
+            if (response.status === 1) {
+              showToast.success("Xóa giao dịch thành công");
+              triggerRefresh();
+              router.back();
+            } else {
+              showToast.error(
+                response.message || "Có lỗi xảy ra khi xóa giao dịch"
+              );
+            }
+          } catch (error) {
+            console.error("Error deleting transaction:", error);
+            showToast.error("Có lỗi xảy ra khi xóa giao dịch");
+          } finally {
+            setSaving(false);
+          }
+        },
+      },
+    ]);
   };
 
   const handleCategorySelect = () => {
@@ -294,12 +406,22 @@ export default function AddRecordScreen() {
         </TouchableOpacity>
 
         <Text style={styles.headerTitle}>
-          {isIncome ? "Thu Nhập" : "Chi Tiêu"}
+          {isEdit ? "Chỉnh sửa giao dịch" : isIncome ? "Thu Nhập" : "Chi Tiêu"}
         </Text>
 
-        <TouchableOpacity onPress={handleSave} style={styles.headerButton}>
-          <Ionicons name="checkmark" size={24} color="white" />
-        </TouchableOpacity>
+        <View style={styles.headerRight}>
+          {isEdit && (
+            <TouchableOpacity
+              onPress={handleDelete}
+              style={styles.headerButton}
+            >
+              <Ionicons name="trash-outline" size={24} color="white" />
+            </TouchableOpacity>
+          )}
+          <TouchableOpacity onPress={handleSave} style={styles.headerButton}>
+            <Ionicons name="checkmark" size={24} color="white" />
+          </TouchableOpacity>
+        </View>
       </View>
 
       <ScrollView style={styles.content} showsVerticalScrollIndicator={false}>
@@ -439,8 +561,20 @@ export default function AddRecordScreen() {
       {/* Save Button */}
       <View style={styles.saveButtonContainer}>
         <TouchableOpacity style={styles.saveButton} onPress={handleSave}>
-          <Ionicons name="add" size={24} color="white" />
-          <Text style={styles.saveButtonText}>Thêm Mới</Text>
+          <Ionicons
+            name={isEdit ? "checkmark" : "add"}
+            size={24}
+            color="white"
+          />
+          <Text style={styles.saveButtonText}>
+            {saving
+              ? isEdit
+                ? "Đang cập nhật..."
+                : "Đang lưu..."
+              : isEdit
+              ? "Cập nhật"
+              : "Thêm Mới"}
+          </Text>
         </TouchableOpacity>
       </View>
 
@@ -483,6 +617,10 @@ const styles = StyleSheet.create({
   },
   headerButton: {
     padding: 8,
+  },
+  headerRight: {
+    flexDirection: "row",
+    alignItems: "center",
   },
   headerTitle: {
     color: "white",

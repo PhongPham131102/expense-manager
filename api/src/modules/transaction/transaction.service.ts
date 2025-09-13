@@ -14,12 +14,12 @@ export class TransactionService {
     ) { }
 
     async createTransaction(
-        userId: string,
+        userId: Types.ObjectId,
         createTransactionDto: CreateTransactionDto,
     ): Promise<{ status: number; message: string; data?: TransactionResponseDto }> {
         try {
             const transaction = new this.transactionModel({
-                userId: new Types.ObjectId(userId),
+                userId: userId,
                 ...createTransactionDto,
                 date: new Date(createTransactionDto.date),
                 time: new Date(createTransactionDto.time),
@@ -60,21 +60,33 @@ export class TransactionService {
     }
 
     async getTransactionsByUser(
-        userId: string,
+        userId: Types.ObjectId,
         page: number = 1,
         limit: number = 10,
+        startDate?: string,
+        endDate?: string,
     ): Promise<{ status: number; message: string; data?: any }> {
         try {
             const skip = (page - 1) * limit;
 
+            // Build query with optional date filters
+            const query: any = { userId: userId };
+
+            if (startDate && endDate) {
+                query.date = {
+                    $gte: new Date(startDate),
+                    $lte: new Date(endDate),
+                };
+            }
+
             const transactions = await this.transactionModel
-                .find({ userId: new Types.ObjectId(userId) })
+                .find(query)
                 .sort({ createdAt: -1 })
                 .skip(skip)
                 .limit(limit)
                 .exec();
 
-            const total = await this.transactionModel.countDocuments({ userId: new Types.ObjectId(userId) });
+            const total = await this.transactionModel.countDocuments(query);
 
             const responseData = {
                 transactions: transactions.map(transaction => ({
@@ -118,11 +130,11 @@ export class TransactionService {
 
     async getTransactionById(
         transactionId: string,
-        userId: string,
+        userId: Types.ObjectId,
     ): Promise<{ status: number; message: string; data?: TransactionResponseDto }> {
         try {
             const transaction = await this.transactionModel
-                .findOne({ _id: transactionId, userId: new Types.ObjectId(userId) })
+                .findOne({ _id: transactionId, userId: userId })
                 .exec();
 
             if (!transaction) {
@@ -163,4 +175,91 @@ export class TransactionService {
             };
         }
     }
+
+    async updateTransaction(
+        transactionId: string,
+        userId: Types.ObjectId,
+        updateTransactionDto: CreateTransactionDto,
+    ): Promise<{ status: number; message: string; data?: TransactionResponseDto }> {
+        try {
+            const transaction = await this.transactionModel
+                .findOneAndUpdate(
+                    { _id: transactionId, userId: userId },
+                    {
+                        ...updateTransactionDto,
+                        date: new Date(updateTransactionDto.date),
+                        time: new Date(updateTransactionDto.time),
+                    },
+                    { new: true }
+                )
+                .exec();
+
+            if (!transaction) {
+                return {
+                    status: StatusResponse.NOT_FOUND,
+                    message: 'Không tìm thấy giao dịch',
+                };
+            }
+
+            const responseData: TransactionResponseDto = {
+                id: transaction._id.toString(),
+                userId: transaction.userId.toString(),
+                amount: transaction.amount,
+                category: transaction.category,
+                categoryId: transaction.categoryId,
+                categoryName: transaction.categoryName,
+                categoryIcon: transaction.categoryIcon,
+                categoryColor: transaction.categoryColor,
+                isIncome: transaction.isIncome,
+                note: transaction.note,
+                date: transaction.date,
+                time: transaction.time,
+                image: transaction.image,
+                createdAt: transaction.createdAt,
+                updatedAt: transaction.updatedAt,
+            };
+
+            return {
+                status: StatusResponse.SUCCESS,
+                message: 'Cập nhật giao dịch thành công',
+                data: responseData,
+            };
+        } catch (error) {
+            console.error('Error updating transaction:', error);
+            return {
+                status: StatusResponse.INTERNAL_SERVER_ERROR,
+                message: 'Có lỗi xảy ra khi cập nhật giao dịch',
+            };
+        }
+    }
+
+    async deleteTransaction(
+        transactionId: string,
+        userId: Types.ObjectId,
+    ): Promise<{ status: number; message: string }> {
+        try {
+            const transaction = await this.transactionModel
+                .findOneAndDelete({ _id: transactionId, userId: userId })
+                .exec();
+
+            if (!transaction) {
+                return {
+                    status: StatusResponse.NOT_FOUND,
+                    message: 'Không tìm thấy giao dịch',
+                };
+            }
+
+            return {
+                status: StatusResponse.SUCCESS,
+                message: 'Xóa giao dịch thành công',
+            };
+        } catch (error) {
+            console.error('Error deleting transaction:', error);
+            return {
+                status: StatusResponse.INTERNAL_SERVER_ERROR,
+                message: 'Có lỗi xảy ra khi xóa giao dịch',
+            };
+        }
+    }
+
 }

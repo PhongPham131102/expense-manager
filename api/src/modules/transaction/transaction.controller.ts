@@ -1,8 +1,20 @@
-import { Controller, Post, Get, Body, Param, Query, UseGuards } from '@nestjs/common';
+import {
+    Controller,
+    Post,
+    Get,
+    Put,
+    Delete,
+    Body,
+    Param,
+    Query,
+    UseGuards,
+} from '@nestjs/common';
 import { TransactionService } from './transaction.service';
 import { CreateTransactionDto } from './dto/create-transaction.dto';
 import { AuthGuard } from '../../guards/auth.guard';
 import { AuthUser } from '../../decorators/auth-user.decorator';
+import { UserDocument } from '../../database/entity/user.entity';
+import { Authentication } from '../../decorators/authentication.decorator';
 
 @Controller('transactions')
 @UseGuards(AuthGuard)
@@ -10,34 +22,59 @@ export class TransactionController {
     constructor(private readonly transactionService: TransactionService) { }
 
     @Post()
+    @Authentication()
     async createTransaction(
-        @AuthUser() user: any,
+        @AuthUser() user: UserDocument,
         @Body() createTransactionDto: CreateTransactionDto,
     ) {
-        return this.transactionService.createTransaction(user.id, createTransactionDto);
+
+        return this.transactionService.createTransaction(
+            user._id,
+            createTransactionDto,
+        );
     }
 
     @Get()
+    @Authentication()
     async getTransactions(
-        @AuthUser() user: any,
+        @AuthUser() user: UserDocument,
         @Query('page') page?: string,
         @Query('limit') limit?: string,
+        @Query('startDate') startDate?: string,
+        @Query('endDate') endDate?: string,
     ) {
+
         const pageNumber = page ? parseInt(page, 10) : 1;
         const limitNumber = limit ? parseInt(limit, 10) : 10;
 
         return this.transactionService.getTransactionsByUser(
-            user.id,
+            user._id,
             pageNumber,
             limitNumber,
+            startDate,
+            endDate,
         );
     }
 
     @Get(':id')
-    async getTransactionById(
-        @AuthUser() user: any,
+    @Authentication()
+    async getTransactionById(@AuthUser() user: UserDocument, @Param('id') id: string) {
+        return this.transactionService.getTransactionById(id, user._id);
+    }
+
+    @Put(':id')
+    @Authentication()
+    async updateTransaction(
+        @AuthUser() user: UserDocument,
         @Param('id') id: string,
+        @Body() updateTransactionDto: CreateTransactionDto,
     ) {
-        return this.transactionService.getTransactionById(id, user.id);
+        return this.transactionService.updateTransaction(id, user._id, updateTransactionDto);
+    }
+
+    @Delete(':id')
+    @Authentication()
+    async deleteTransaction(@AuthUser() user: UserDocument, @Param('id') id: string) {
+        return this.transactionService.deleteTransaction(id, user._id);
     }
 }

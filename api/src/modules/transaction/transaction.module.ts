@@ -13,7 +13,6 @@ import { PermissionModule } from '../permission/permission.module';
             { name: Transaction.name, schema: TransactionSchema },
         ]),
         UserModule,
-        // eslint-disable-next-line prettier/prettier
         PermissionModule
     ],
     controllers: [TransactionController],
