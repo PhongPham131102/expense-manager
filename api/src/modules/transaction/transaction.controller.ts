@@ -77,4 +77,13 @@ export class TransactionController {
     async deleteTransaction(@AuthUser() user: UserDocument, @Param('id') id: string) {
         return this.transactionService.deleteTransaction(id, user._id);
     }
+
+    @Get('dashboard/data')
+    @Authentication()
+    async getDashboardData(
+        @AuthUser() user: UserDocument,
+        @Query('period') period?: string
+    ) {
+        return this.transactionService.getDashboardData(user._id, period || 'today');
+    }
 }

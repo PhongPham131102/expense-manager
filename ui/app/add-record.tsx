@@ -83,8 +83,9 @@ export default function AddRecordScreen() {
   const triggerRefresh = () => {
     // Trigger refresh in parent component
     if (refreshCallback) {
-      // Use global callback to refresh records
+      // Use global callback to refresh records and dashboard
       (global as any).refreshRecordsCallback?.();
+      (global as any).refreshDashboardCallback?.();
     }
   };
 

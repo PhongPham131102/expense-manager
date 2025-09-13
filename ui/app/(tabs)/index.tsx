@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import {
   View,
   Text,
@@ -8,18 +8,61 @@ import {
   StatusBar,
 } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
-import { router } from "expo-router";
+import { router, useFocusEffect } from "expo-router";
 import { useAppSelector } from "@/store/hooks";
-import { mockExpenseData } from "@/data/mockData";
+import { apiService, DashboardData } from "@/services/api";
 import { BalanceCard } from "@/components/dashboard/BalanceCard";
 import { TimePeriodSelector } from "@/components/dashboard/TimePeriodSelector";
 import { IncomeExpenseChart } from "@/components/dashboard/IncomeExpenseChart";
 import { ComparisonChart } from "@/components/dashboard/ComparisonChart";
+import { showToast } from "@/utils/toast";
 
 export default function DashboardScreen() {
   const { user } = useAppSelector((state) => state.auth);
   const [selectedPeriod, setSelectedPeriod] = useState("today");
   const [isBalanceVisible] = useState(true);
+  const [dashboardData, setDashboardData] = useState<DashboardData | null>(
+    null
+  );
+  const [loading, setLoading] = useState(false);
+
+  const loadDashboardData = async (period: string) => {
+    try {
+      setLoading(true);
+      const response = await apiService.getDashboardData(period);
+
+      if (response.status === 1 && response.data) {
+        setDashboardData(response.data);
+      } else {
+        showToast.error("Không thể tải dữ liệu dashboard");
+      }
+    } catch (error) {
+      console.error("Error loading dashboard data:", error);
+      showToast.error("Có lỗi xảy ra khi tải dữ liệu");
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  useEffect(() => {
+    loadDashboardData(selectedPeriod);
+  }, [selectedPeriod]);
+
+  useFocusEffect(
+    React.useCallback(() => {
+      loadDashboardData(selectedPeriod);
+    }, [selectedPeriod])
+  );
+
+  useEffect(() => {
+    // Setup global refresh callback
+    (global as any).refreshDashboardCallback = () => {
+      loadDashboardData(selectedPeriod);
+    };
+    return () => {
+      (global as any).refreshDashboardCallback = null;
+    };
+  }, [selectedPeriod]);
 
   return (
     <View style={styles.container}>
@@ -35,7 +78,7 @@ export default function DashboardScreen() {
               style={styles.addButton}
               onPress={() => {
                 console.log("Navigating to add-record...");
-                router.push("/add-record");
+                router.push("/add-record?refreshCallback=true");
               }}
             >
               <Ionicons name="add" size={24} color="#FFFFFF" />
@@ -52,29 +95,41 @@ export default function DashboardScreen() {
       </View>
 
       <ScrollView style={styles.content} showsVerticalScrollIndicator={false}>
-        {/* Total Balance Card */}
-        <BalanceCard balance={mockExpenseData.totalBalance} />
+        {loading ? (
+          <View style={styles.loadingContainer}>
+            <Text style={styles.loadingText}>Đang tải dữ liệu...</Text>
+          </View>
+        ) : dashboardData ? (
+          <>
+            {/* Total Balance Card */}
+            <BalanceCard balance={dashboardData.totalBalance} />
 
-        {/* Income/Expense Section */}
-        <View style={styles.section}>
-          <TimePeriodSelector
-            selectedPeriod={selectedPeriod}
-            onPeriodChange={setSelectedPeriod}
-          />
+            {/* Income/Expense Section */}
+            <View style={styles.section}>
+              <TimePeriodSelector
+                selectedPeriod={selectedPeriod}
+                onPeriodChange={setSelectedPeriod}
+              />
 
-          <IncomeExpenseChart
-            income={mockExpenseData.income}
-            spending={mockExpenseData.spending}
-            isVisible={isBalanceVisible}
-          />
-        </View>
+              <IncomeExpenseChart
+                income={dashboardData.income}
+                spending={dashboardData.spending}
+                isVisible={isBalanceVisible}
+              />
+            </View>
 
-        {/* Comparison Chart Section */}
-        <ComparisonChart
-          weeklyData={mockExpenseData.weeklySpending}
-          monthlyData={mockExpenseData.monthlySpending}
-          isVisible={isBalanceVisible}
-        />
+            {/* Comparison Chart Section */}
+            <ComparisonChart
+              weeklyData={dashboardData.weeklySpending}
+              monthlyData={dashboardData.monthlySpending}
+              isVisible={isBalanceVisible}
+            />
+          </>
+        ) : (
+          <View style={styles.errorContainer}>
+            <Text style={styles.errorText}>Không có dữ liệu</Text>
+          </View>
+        )}
       </ScrollView>
     </View>
   );
@@ -152,5 +207,25 @@ const styles = StyleSheet.create({
     paddingHorizontal: 20,
     paddingTop: 20,
     paddingBottom: 8,
+  },
+  loadingContainer: {
+    flex: 1,
+    justifyContent: "center",
+    alignItems: "center",
+    paddingVertical: 50,
+  },
+  loadingText: {
+    fontSize: 16,
+    color: "#666",
+  },
+  errorContainer: {
+    flex: 1,
+    justifyContent: "center",
+    alignItems: "center",
+    paddingVertical: 50,
+  },
+  errorText: {
+    fontSize: 16,
+    color: "#E74C3C",
   },
 });

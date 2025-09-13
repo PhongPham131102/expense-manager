@@ -107,6 +107,42 @@ export interface CreateTransactionResponse {
     data?: TransactionResponse;
 }
 
+export interface CategoryStats {
+    id: string;
+    name: string;
+    amount: number;
+    percentage: number;
+    color: string;
+    icon: string;
+}
+
+export interface WeeklyStats {
+    thisWeek: number;
+    lastWeek: number;
+    percentage: number;
+}
+
+export interface MonthlyStats {
+    thisMonth: number;
+    lastMonth: number;
+    percentage: number;
+}
+
+export interface DashboardData {
+    totalBalance: number;
+    income: number;
+    spending: number;
+    categories: CategoryStats[];
+    weeklySpending: WeeklyStats;
+    monthlySpending: MonthlyStats;
+}
+
+export interface DashboardResponse {
+    status: number;
+    message: string;
+    data?: DashboardData;
+}
+
 export interface GetTransactionsResponse {
     status: number;
     message: string;
@@ -311,6 +347,12 @@ class ApiService {
     async deleteTransaction(transactionId: string): Promise<{ status: number; message: string }> {
         return this.request<{ status: number; message: string }>(`/transactions/${transactionId}`, {
             method: 'DELETE',
+        }, true); // requireAuth = true
+    }
+
+    async getDashboardData(period: string = 'today'): Promise<DashboardResponse> {
+        return this.request<DashboardResponse>(`/transactions/dashboard/data?period=${period}`, {
+            method: 'GET',
         }, true); // requireAuth = true
     }
 

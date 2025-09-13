@@ -4,6 +4,7 @@ import { Model, Types } from 'mongoose';
 import { Transaction, TransactionDocument } from '../../database/entity/transaction.entity';
 import { CreateTransactionDto } from './dto/create-transaction.dto';
 import { TransactionResponseDto } from './dto/transaction-response.dto';
+import { DashboardResponseDto, CategoryStatsDto, WeeklyStatsDto, MonthlyStatsDto } from './dto/dashboard-response.dto';
 import { StatusResponse } from '../../common/StatusResponse';
 
 @Injectable()
@@ -258,6 +259,185 @@ export class TransactionService {
             return {
                 status: StatusResponse.INTERNAL_SERVER_ERROR,
                 message: 'Có lỗi xảy ra khi xóa giao dịch',
+            };
+        }
+    }
+
+    async getDashboardData(
+        userId: Types.ObjectId,
+        period: string = 'today'
+    ): Promise<{ status: number; message: string; data?: DashboardResponseDto }> {
+        try {
+            const now = new Date();
+            let startDate: Date;
+            let endDate: Date = now;
+
+            // Calculate date range based on period
+            switch (period) {
+                case 'today':
+                    startDate = new Date(now.getFullYear(), now.getMonth(), now.getDate());
+                    break;
+                case 'week':
+                    const startOfWeek = new Date(now);
+                    startOfWeek.setDate(now.getDate() - now.getDay());
+                    startOfWeek.setHours(0, 0, 0, 0);
+                    startDate = startOfWeek;
+                    break;
+                case 'month':
+                    startDate = new Date(now.getFullYear(), now.getMonth(), 1);
+                    break;
+                case 'year':
+                    startDate = new Date(now.getFullYear(), 0, 1);
+                    break;
+                default:
+                    startDate = new Date(now.getFullYear(), now.getMonth(), now.getDate());
+            }
+
+            // Get transactions for current period
+            const currentTransactions = await this.transactionModel
+                .find({
+                    userId: userId,
+                    date: { $gte: startDate, $lte: endDate }
+                })
+                .exec();
+
+            // Calculate income and spending
+            let income = 0;
+            let spending = 0;
+            const categoryMap = new Map<string, { amount: number; name: string; color: string; icon: string }>();
+
+            currentTransactions.forEach(transaction => {
+                if (transaction.isIncome) {
+                    income += transaction.amount;
+                } else {
+                    spending += transaction.amount;
+
+                    // Aggregate by category
+                    const categoryKey = transaction.categoryId;
+                    if (categoryMap.has(categoryKey)) {
+                        const existing = categoryMap.get(categoryKey)!;
+                        existing.amount += transaction.amount;
+                    } else {
+                        categoryMap.set(categoryKey, {
+                            amount: transaction.amount,
+                            name: transaction.categoryName,
+                            color: transaction.categoryColor,
+                            icon: transaction.categoryIcon
+                        });
+                    }
+                }
+            });
+
+            // Convert category map to array and calculate percentages
+            const totalSpending = spending;
+            const categories: CategoryStatsDto[] = Array.from(categoryMap.entries()).map(([id, data]) => ({
+                id,
+                name: data.name,
+                amount: data.amount,
+                percentage: totalSpending > 0 ? Math.round((data.amount / totalSpending) * 100) : 0,
+                color: data.color,
+                icon: data.icon
+            })).sort((a, b) => b.amount - a.amount);
+
+            // Calculate weekly comparison
+            const weekStart = new Date(now);
+            weekStart.setDate(now.getDate() - now.getDay());
+            weekStart.setHours(0, 0, 0, 0);
+
+            const lastWeekStart = new Date(weekStart);
+            lastWeekStart.setDate(weekStart.getDate() - 7);
+
+            const lastWeekEnd = new Date(weekStart);
+            lastWeekEnd.setMilliseconds(-1);
+
+            const thisWeekTransactions = await this.transactionModel
+                .find({
+                    userId: userId,
+                    date: { $gte: weekStart, $lte: now },
+                    isIncome: false
+                })
+                .exec();
+
+            const lastWeekTransactions = await this.transactionModel
+                .find({
+                    userId: userId,
+                    date: { $gte: lastWeekStart, $lte: lastWeekEnd },
+                    isIncome: false
+                })
+                .exec();
+
+            const thisWeekSpending = thisWeekTransactions.reduce((sum, t) => sum + t.amount, 0);
+            const lastWeekSpending = lastWeekTransactions.reduce((sum, t) => sum + t.amount, 0);
+            const weeklyPercentage = lastWeekSpending > 0 ?
+                Math.round(((thisWeekSpending - lastWeekSpending) / lastWeekSpending) * 100) : 0;
+
+            // Calculate monthly comparison
+            const monthStart = new Date(now.getFullYear(), now.getMonth(), 1);
+            const lastMonthStart = new Date(now.getFullYear(), now.getMonth() - 1, 1);
+            const lastMonthEnd = new Date(now.getFullYear(), now.getMonth(), 0, 23, 59, 59, 999);
+
+            const thisMonthTransactions = await this.transactionModel
+                .find({
+                    userId: userId,
+                    date: { $gte: monthStart, $lte: now },
+                    isIncome: false
+                })
+                .exec();
+
+            const lastMonthTransactions = await this.transactionModel
+                .find({
+                    userId: userId,
+                    date: { $gte: lastMonthStart, $lte: lastMonthEnd },
+                    isIncome: false
+                })
+                .exec();
+
+            const thisMonthSpending = thisMonthTransactions.reduce((sum, t) => sum + t.amount, 0);
+            const lastMonthSpending = lastMonthTransactions.reduce((sum, t) => sum + t.amount, 0);
+            const monthlyPercentage = lastMonthSpending > 0 ?
+                Math.round(((thisMonthSpending - lastMonthSpending) / lastMonthSpending) * 100) : 0;
+
+            // Calculate total balance (assuming we have some initial balance or income history)
+            // For now, we'll use a simple calculation: total income - total spending
+            const allIncomeTransactions = await this.transactionModel
+                .find({ userId: userId, isIncome: true })
+                .exec();
+
+            const allSpendingTransactions = await this.transactionModel
+                .find({ userId: userId, isIncome: false })
+                .exec();
+
+            const totalIncome = allIncomeTransactions.reduce((sum, t) => sum + t.amount, 0);
+            const totalSpendingAll = allSpendingTransactions.reduce((sum, t) => sum + t.amount, 0);
+            const totalBalance = totalIncome - totalSpendingAll;
+
+            const dashboardData: DashboardResponseDto = {
+                totalBalance: Math.max(0, totalBalance), // Ensure balance is not negative
+                income,
+                spending,
+                categories,
+                weeklySpending: {
+                    thisWeek: thisWeekSpending,
+                    lastWeek: lastWeekSpending,
+                    percentage: weeklyPercentage
+                },
+                monthlySpending: {
+                    thisMonth: thisMonthSpending,
+                    lastMonth: lastMonthSpending,
+                    percentage: monthlyPercentage
+                }
+            };
+
+            return {
+                status: StatusResponse.SUCCESS,
+                message: 'Lấy dữ liệu dashboard thành công',
+                data: dashboardData
+            };
+        } catch (error) {
+            console.error('Error getting dashboard data:', error);
+            return {
+                status: StatusResponse.INTERNAL_SERVER_ERROR,
+                message: 'Có lỗi xảy ra khi lấy dữ liệu dashboard'
             };
         }
     }
