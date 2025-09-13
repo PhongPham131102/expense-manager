@@ -16,5 +16,9 @@ export class User {
   role: RoleDocument;
   @Prop({ type: String, default: '' })
   refresh_token: string;
+  @Prop({ type: Number, default: 0 })
+  initialBalance: number;
+  @Prop({ type: Boolean, default: false })
+  hasSetInitialBalance: boolean;
 }
 export const UserSchema = SchemaFactory.createForClass(User);

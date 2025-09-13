@@ -63,6 +63,7 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
       await dispatch(loginUser({ username, password })).unwrap();
       showToast.success("Đăng nhập thành công!");
       // Navigate to dashboard after successful login
+      // InitialBalanceGuard will handle checking if user needs to set initial balance
       router.replace("/(tabs)");
     } catch (error: any) {
       // Extract clean error message, remove "API Error: Error:" prefix

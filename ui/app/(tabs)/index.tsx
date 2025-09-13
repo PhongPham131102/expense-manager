@@ -83,12 +83,16 @@ export default function DashboardScreen() {
             >
               <Ionicons name="add" size={24} color="#FFFFFF" />
             </TouchableOpacity>
-            <TouchableOpacity style={styles.notificationButton}>
-              <Ionicons
-                name="notifications-outline"
-                size={24}
-                color="#FFFFFF"
-              />
+            <TouchableOpacity
+              style={styles.notificationButton}
+              onPress={() => {
+                console.log(
+                  "Test button pressed - navigating to set-initial-balance"
+                );
+                router.push("/set-initial-balance");
+              }}
+            >
+              <Ionicons name="wallet-outline" size={24} color="#FFFFFF" />
             </TouchableOpacity>
           </View>
         </View>

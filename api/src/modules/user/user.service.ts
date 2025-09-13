@@ -8,6 +8,7 @@ import * as bcrypt from 'bcrypt';
 import { CreateUserDto } from './dto/create-user.dto';
 import { ChangePasswordDto } from './dto/change-password.dto';
 import { UpdateProfileDto } from './dto/update-profile.dto';
+import { SetInitialBalanceDto } from './dto/set-initial-balance.dto';
 import { StatusResponse } from 'src/common/StatusResponse';
 import { formatDate } from 'src/common';
 import { Request } from 'express';
@@ -276,6 +277,131 @@ export class UserService {
         name: updatedUser.name,
         email: updatedUser.email,
         username: updatedUser.username,
+      },
+    };
+  }
+
+  async setInitialBalance(userId: string, setInitialBalanceDto: SetInitialBalanceDto) {
+    const { initialBalance } = setInitialBalanceDto;
+
+    console.log("setInitialBalance called:", {
+      userId,
+      initialBalance,
+      setInitialBalanceDto
+    });
+
+    // Find user by ID
+    const user = await this.userModel.findById(new Types.ObjectId(userId));
+    console.log("User found:", {
+      userId: user?._id,
+      hasSetInitialBalance: user?.hasSetInitialBalance,
+      initialBalance: user?.initialBalance
+    });
+
+    if (!user) {
+      console.log("User not found");
+      throw new HttpException(
+        {
+          status: StatusResponse.NOT_EXISTS_USER,
+          message: 'Người dùng không tồn tại',
+        },
+        HttpStatus.NOT_FOUND,
+      );
+    }
+
+    // Allow user to update initial balance even if already set
+    // This provides flexibility for users to correct their initial balance
+
+    // Update user with initial balance
+    const updatedUser = await this.userModel
+      .findByIdAndUpdate(
+        new Types.ObjectId(userId),
+        {
+          initialBalance,
+          hasSetInitialBalance: true,
+        },
+        { new: true }
+      )
+      .populate([{ path: 'role', select: '_id name' }]);
+
+    return {
+      status: StatusResponse.SUCCESS,
+      message: 'Số dư ban đầu đã được thiết lập thành công',
+      data: {
+        initialBalance: updatedUser.initialBalance,
+        hasSetInitialBalance: updatedUser.hasSetInitialBalance,
+      },
+    };
+  }
+
+  async updateInitialBalance(userId: string, setInitialBalanceDto: SetInitialBalanceDto) {
+    const { initialBalance } = setInitialBalanceDto;
+
+    console.log("updateInitialBalance called:", {
+      userId,
+      initialBalance,
+      setInitialBalanceDto
+    });
+
+    // Find user by ID
+    const user = await this.userModel.findById(new Types.ObjectId(userId));
+    console.log("User found:", {
+      userId: user?._id,
+      hasSetInitialBalance: user?.hasSetInitialBalance,
+      initialBalance: user?.initialBalance
+    });
+
+    if (!user) {
+      console.log("User not found");
+      throw new HttpException(
+        {
+          status: StatusResponse.NOT_EXISTS_USER,
+          message: 'Người dùng không tồn tại',
+        },
+        HttpStatus.NOT_FOUND,
+      );
+    }
+
+    // Update user with new initial balance (allow update even if already set)
+    const updatedUser = await this.userModel
+      .findByIdAndUpdate(
+        new Types.ObjectId(userId),
+        {
+          initialBalance,
+          hasSetInitialBalance: true,
+        },
+        { new: true }
+      )
+      .populate([{ path: 'role', select: '_id name' }]);
+
+    return {
+      status: StatusResponse.SUCCESS,
+      message: 'Số dư ban đầu đã được cập nhật thành công',
+      data: {
+        initialBalance: updatedUser.initialBalance,
+        hasSetInitialBalance: updatedUser.hasSetInitialBalance,
+      },
+    };
+  }
+
+  async checkInitialBalanceStatus(userId: string) {
+    const user = await this.userModel.findById(new Types.ObjectId(userId));
+    if (!user) {
+      throw new HttpException(
+        {
+          status: StatusResponse.NOT_EXISTS_USER,
+          message: 'Người dùng không tồn tại',
+        },
+        HttpStatus.NOT_FOUND,
+      );
+    }
+
+    return {
+      status: StatusResponse.SUCCESS,
+      message: 'Lấy trạng thái số dư ban đầu thành công',
+      data: {
+        hasSetInitialBalance: user.hasSetInitialBalance,
+        initialBalance: user.initialBalance,
       },
     };
   }

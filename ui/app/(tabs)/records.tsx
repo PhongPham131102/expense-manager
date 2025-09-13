@@ -53,8 +53,22 @@ export default function RecordsScreen() {
       let endDateParam: string | undefined;
 
       if (activeTab === "custom") {
-        startDateParam = startDate.toISOString();
-        endDateParam = endDate.toISOString();
+        // Set start date to beginning of day (00:00:00)
+        const startOfDay = new Date(startDate);
+        startOfDay.setHours(0, 0, 0, 0);
+        startDateParam = startOfDay.toISOString();
+
+        // Set end date to end of day (23:59:59.999)
+        const endOfDay = new Date(endDate);
+        endOfDay.setHours(23, 59, 59, 999);
+        endDateParam = endOfDay.toISOString();
+
+        console.log("Custom date range:", {
+          startDate: startDate.toDateString(),
+          endDate: endDate.toDateString(),
+          startDateParam,
+          endDateParam,
+        });
       }
 
       const response = await apiService.getTransactions(

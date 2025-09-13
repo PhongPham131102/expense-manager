@@ -49,6 +49,10 @@ export default function RootLayout() {
               name="select-category"
               options={{ headerShown: false }}
             />
+            <Stack.Screen
+              name="set-initial-balance"
+              options={{ headerShown: false }}
+            />
             <Stack.Screen name="(tabs)" options={{ headerShown: false }} />
             <Stack.Screen
               name="modal"

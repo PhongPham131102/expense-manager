@@ -2,6 +2,7 @@ import { Injectable } from '@nestjs/common';
 import { InjectModel } from '@nestjs/mongoose';
 import { Model, Types } from 'mongoose';
 import { Transaction, TransactionDocument } from '../../database/entity/transaction.entity';
+import { User, UserDocument } from '../../database/entity/user.entity';
 import { CreateTransactionDto } from './dto/create-transaction.dto';
 import { TransactionResponseDto } from './dto/transaction-response.dto';
 import { DashboardResponseDto, CategoryStatsDto, WeeklyStatsDto, MonthlyStatsDto } from './dto/dashboard-response.dto';
@@ -12,6 +13,8 @@ export class TransactionService {
     constructor(
         @InjectModel(Transaction.name)
         private transactionModel: Model<TransactionDocument>,
+        @InjectModel(User.name)
+        private userModel: Model<UserDocument>,
     ) { }
 
     async createTransaction(
@@ -74,9 +77,11 @@ export class TransactionService {
             const query: any = { userId: userId };
 
             if (startDate && endDate) {
+                const startDateObj = new Date(startDate);
+                const endDateObj = new Date(endDate);
                 query.date = {
-                    $gte: new Date(startDate),
-                    $lte: new Date(endDate),
+                    $gte: startDateObj,
+                    $lte: endDateObj,
                 };
             }
 
@@ -397,8 +402,7 @@ export class TransactionService {
             const monthlyPercentage = lastMonthSpending > 0 ?
                 Math.round(((thisMonthSpending - lastMonthSpending) / lastMonthSpending) * 100) : 0;
 
-            // Calculate total balance (assuming we have some initial balance or income history)
-            // For now, we'll use a simple calculation: total income - total spending
+            // Calculate total balance: initialBalance + total income - total spending
             const allIncomeTransactions = await this.transactionModel
                 .find({ userId: userId, isIncome: true })
                 .exec();
@@ -409,7 +413,12 @@ export class TransactionService {
 
             const totalIncome = allIncomeTransactions.reduce((sum, t) => sum + t.amount, 0);
             const totalSpendingAll = allSpendingTransactions.reduce((sum, t) => sum + t.amount, 0);
-            const totalBalance = totalIncome - totalSpendingAll;
+
+            // Get user's initial balance
+            const user = await this.userModel.findById(userId);
+            const initialBalance = user?.initialBalance || 0;
+
+            const totalBalance = initialBalance + totalIncome - totalSpendingAll;
 
             const dashboardData: DashboardResponseDto = {
                 totalBalance: Math.max(0, totalBalance), // Ensure balance is not negative

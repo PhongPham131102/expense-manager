@@ -143,6 +143,28 @@ export interface DashboardResponse {
     data?: DashboardData;
 }
 
+export interface SetInitialBalanceRequest {
+    initialBalance: number;
+}
+
+export interface SetInitialBalanceResponse {
+    status: number;
+    message: string;
+    data?: {
+        initialBalance: number;
+        hasSetInitialBalance: boolean;
+    };
+}
+
+export interface InitialBalanceStatusResponse {
+    status: number;
+    message: string;
+    data?: {
+        hasSetInitialBalance: boolean;
+        initialBalance: number;
+    };
+}
+
 export interface GetTransactionsResponse {
     status: number;
     message: string;
@@ -352,6 +374,26 @@ class ApiService {
 
     async getDashboardData(period: string = 'today'): Promise<DashboardResponse> {
         return this.request<DashboardResponse>(`/transactions/dashboard/data?period=${period}`, {
+            method: 'GET',
+        }, true); // requireAuth = true
+    }
+
+    async setInitialBalance(initialBalance: number): Promise<SetInitialBalanceResponse> {
+        return this.request<SetInitialBalanceResponse>('/user/set-initial-balance', {
+            method: 'POST',
+            body: JSON.stringify({ initialBalance }),
+        }, true); // requireAuth = true
+    }
+
+    async updateInitialBalance(initialBalance: number): Promise<SetInitialBalanceResponse> {
+        return this.request<SetInitialBalanceResponse>('/user/update-initial-balance', {
+            method: 'PUT',
+            body: JSON.stringify({ initialBalance }),
+        }, true); // requireAuth = true
+    }
+
+    async getInitialBalanceStatus(): Promise<InitialBalanceStatusResponse> {
+        return this.request<InitialBalanceStatusResponse>('/user/initial-balance-status', {
             method: 'GET',
         }, true); // requireAuth = true
     }
