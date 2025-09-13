@@ -23,7 +23,7 @@ export class AuthService {
     private userService: UserService,
     private jwtService: JwtService,
     private roleService: RoleService,
-  ) {}
+  ) { }
   async signUp(createUserDto: CreateUserDto, request: Request, userIp: string) {
     const { username, email, role } = createUserDto;
     if (email) {
@@ -67,6 +67,7 @@ export class AuthService {
     const userData = {
       username: user.username,
       name: user.name,
+      email: user.email,
       role: user.role,
     };
     return {
@@ -116,6 +117,7 @@ export class AuthService {
     const userData = {
       username: user.username,
       name: user.name,
+      email: user.email,
     };
     const stringLog = `${user?.username} vừa đăng nhập.\nVào lúc: <b>${formatDate(
       new Date(),

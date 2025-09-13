@@ -139,6 +139,15 @@ const authSlice = createSlice({
         setLoading: (state, action: PayloadAction<boolean>) => {
             state.isLoading = action.payload;
         },
+        updateUserProfile: (state, action: PayloadAction<{ name: string; email?: string; username: string }>) => {
+            if (state.user) {
+                state.user.name = action.payload.name;
+                state.user.username = action.payload.username;
+                if (action.payload.email !== undefined) {
+                    state.user.email = action.payload.email;
+                }
+            }
+        },
     },
     extraReducers: (builder) => {
         // Login
@@ -155,6 +164,7 @@ const authSlice = createSlice({
                     id: action.payload.userId,
                     username: action.payload.userData.username,
                     name: action.payload.userData.name,
+                    email: action.payload.userData.email,
                     role: action.payload.role,
                     permission: action.payload.permission,
                 };
@@ -218,6 +228,7 @@ const authSlice = createSlice({
                         id: 'temp-id', // We don't store user ID in AsyncStorage
                         username: action.payload.userData.username,
                         name: action.payload.userData.name,
+                        email: action.payload.userData.email,
                         role: { name: 'user' }, // Default role
                         permission: [],
                     };
@@ -231,5 +242,5 @@ const authSlice = createSlice({
     },
 });
 
-export const { clearError, setLoading } = authSlice.actions;
+export const { clearError, setLoading, updateUserProfile } = authSlice.actions;
 export default authSlice.reducer;

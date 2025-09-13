@@ -1,6 +1,7 @@
 import React, { useState } from "react";
 import { View, Text, StyleSheet, TouchableOpacity } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
+import { router } from "expo-router";
 import { useAppSelector } from "@/store/hooks";
 import { useAuth } from "@/contexts/AuthContext";
 import { ConfirmationModal } from "@/components/ConfirmationModal";
@@ -23,6 +24,14 @@ export default function ProfileScreen() {
     setShowLogoutModal(false);
   };
 
+  const handleChangePassword = () => {
+    router.push("/change-password");
+  };
+
+  const handleEditProfile = () => {
+    router.push("/edit-profile");
+  };
+
   return (
     <View style={styles.container}>
       <View style={styles.header}>
@@ -34,7 +43,7 @@ export default function ProfileScreen() {
       </View>
 
       <View style={styles.menu}>
-        <TouchableOpacity style={styles.menuItem}>
+        <TouchableOpacity style={styles.menuItem} onPress={handleEditProfile}>
           <Ionicons name="person-outline" size={24} color="#666" />
           <Text style={styles.menuText}>Thông tin cá nhân</Text>
           <Ionicons name="chevron-forward" size={20} color="#999" />
@@ -43,6 +52,15 @@ export default function ProfileScreen() {
         <TouchableOpacity style={styles.menuItem}>
           <Ionicons name="settings-outline" size={24} color="#666" />
           <Text style={styles.menuText}>Cài đặt</Text>
+          <Ionicons name="chevron-forward" size={20} color="#999" />
+        </TouchableOpacity>
+
+        <TouchableOpacity
+          style={styles.menuItem}
+          onPress={handleChangePassword}
+        >
+          <Ionicons name="lock-closed-outline" size={24} color="#666" />
+          <Text style={styles.menuText}>Thay đổi mật khẩu</Text>
           <Ionicons name="chevron-forward" size={20} color="#999" />
         </TouchableOpacity>
 

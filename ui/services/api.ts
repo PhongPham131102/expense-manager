@@ -29,6 +29,7 @@ export interface AuthResponse {
     userData: {
         username: string;
         name: string;
+        email?: string;
     };
 }
 
@@ -39,6 +40,32 @@ export interface RegisterResponse {
         username: string;
         name: string;
         role: any;
+    };
+}
+
+export interface ChangePasswordRequest {
+    currentPassword: string;
+    newPassword: string;
+}
+
+export interface ChangePasswordResponse {
+    status: number;
+    message: string;
+}
+
+export interface UpdateProfileRequest {
+    name: string;
+    email?: string;
+    username: string;
+}
+
+export interface UpdateProfileResponse {
+    status: number;
+    message: string;
+    data?: {
+        name: string;
+        email?: string;
+        username: string;
     };
 }
 
@@ -73,7 +100,7 @@ class ApiService {
 
         const headers: Record<string, string> = {
             'Content-Type': 'application/json',
-            ...options.headers,
+            ...(options.headers as Record<string, string>),
         };
 
         // Add Authorization header if required
@@ -129,7 +156,7 @@ class ApiService {
                     }
 
                     errorStatus = errorData.status || errorData.statusCode || errorStatus;
-                } catch (jsonError) {
+                } catch {
                     // If response is not JSON (e.g., HTML error page), use status text
                     console.log('Response is not JSON, using status text');
                 }
@@ -177,6 +204,20 @@ class ApiService {
     // User APIs
     async getUserProfile(): Promise<any> {
         return this.request<any>('/user/profile');
+    }
+
+    async changePassword(passwordData: ChangePasswordRequest): Promise<ChangePasswordResponse> {
+        return this.request<ChangePasswordResponse>('/user/change-password', {
+            method: 'POST',
+            body: JSON.stringify(passwordData),
+        }, true); // requireAuth = true
+    }
+
+    async updateProfile(profileData: UpdateProfileRequest): Promise<UpdateProfileResponse> {
+        return this.request<UpdateProfileResponse>('/user/update-profile', {
+            method: 'PUT',
+            body: JSON.stringify(profileData),
+        }, true); // requireAuth = true
     }
 
     // Health check

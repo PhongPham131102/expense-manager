@@ -6,6 +6,8 @@ import { FilterQuery, Model, Types } from 'mongoose';
 import { PermissionService } from '../permission/permission.service';
 import * as bcrypt from 'bcrypt';
 import { CreateUserDto } from './dto/create-user.dto';
+import { ChangePasswordDto } from './dto/change-password.dto';
+import { UpdateProfileDto } from './dto/update-profile.dto';
 import { StatusResponse } from 'src/common/StatusResponse';
 import { formatDate } from 'src/common';
 import { Request } from 'express';
@@ -14,7 +16,7 @@ export class UserService {
   constructor(
     @InjectModel(User.name) private userModel: Model<UserDocument>,
     private readonly permissionService: PermissionService,
-  ) {}
+  ) { }
   async findOneBy(filter: FilterQuery<UserDocument>) {
     return await this.userModel.findOne(filter);
   }
@@ -148,5 +150,133 @@ export class UserService {
           name: 1,
         },
       });
+  }
+
+  async changePassword(userId: string, changePasswordDto: ChangePasswordDto) {
+    const { currentPassword, newPassword } = changePasswordDto;
+
+    // Find user by ID
+    const user = await this.userModel.findById(new Types.ObjectId(userId));
+    if (!user) {
+      throw new HttpException(
+        {
+          status: StatusResponse.NOT_EXISTS_USER,
+          message: 'Người dùng không tồn tại',
+        },
+        HttpStatus.NOT_FOUND,
+      );
+    }
+
+    // Verify current password
+    const isCurrentPasswordValid = await this.checkPassword(
+      currentPassword,
+      user.password,
+    );
+    if (!isCurrentPasswordValid) {
+      throw new HttpException(
+        {
+          status: StatusResponse.PASSWORD_INCORRECT,
+          message: 'Mật khẩu hiện tại không đúng',
+        },
+        HttpStatus.BAD_REQUEST,
+      );
+    }
+
+    // Check if new password is different from current password
+    const isSamePassword = await this.checkPassword(newPassword, user.password);
+    if (isSamePassword) {
+      throw new HttpException(
+        {
+          status: StatusResponse.BAD_REQUEST,
+          message: 'Mật khẩu mới phải khác mật khẩu hiện tại',
+        },
+        HttpStatus.BAD_REQUEST,
+      );
+    }
+
+    // Hash new password
+    const hashedNewPassword = await bcrypt.hash(newPassword, 10);
+
+    // Update password
+    await this.userModel.findByIdAndUpdate(
+      new Types.ObjectId(userId),
+      { password: hashedNewPassword },
+      { new: true },
+    );
+
+    return {
+      status: StatusResponse.SUCCESS,
+      message: 'Mật khẩu đã được thay đổi thành công',
+    };
+  }
+
+  async updateProfile(userId: string, updateProfileDto: UpdateProfileDto) {
+    const { name, email, username } = updateProfileDto;
+
+    // Find user by ID
+    const user = await this.userModel.findById(new Types.ObjectId(userId));
+    if (!user) {
+      throw new HttpException(
+        {
+          status: StatusResponse.NOT_EXISTS_USER,
+          message: 'Người dùng không tồn tại',
+        },
+        HttpStatus.NOT_FOUND,
+      );
+    }
+
+    // Check if username is already taken by another user
+    if (username !== user.username) {
+      const existingUser = await this.checkUsername(username);
+      if (existingUser) {
+        throw new HttpException(
+          {
+            status: StatusResponse.EXISTS_USERNAME,
+            message: 'Tên đăng nhập đã được sử dụng',
+          },
+          HttpStatus.BAD_REQUEST,
+        );
+      }
+    }
+
+    // Check if email is already taken by another user (if email is provided)
+    if (email && email !== user.email) {
+      const existingEmail = await this.checkEmail(email);
+      if (existingEmail) {
+        throw new HttpException(
+          {
+            status: StatusResponse.EXISTS_EMAIL,
+            message: 'Email đã được sử dụng',
+          },
+          HttpStatus.BAD_REQUEST,
+        );
+      }
+    }
+
+    // Update user profile
+    const updateData: any = {
+      name,
+      username,
+    };
+
+    if (email) {
+      updateData.email = email;
+    }
+
+    const updatedUser = await this.userModel
+      .findByIdAndUpdate(new Types.ObjectId(userId), updateData, {
+        new: true,
+      })
+      .populate([{ path: 'role', select: '_id name' }]);
+
+    return {
+      status: StatusResponse.SUCCESS,
+      message: 'Thông tin cá nhân đã được cập nhật thành công',
+      data: {
+        name: updatedUser.name,
+        email: updatedUser.email,
+        username: updatedUser.username,
+      },
+    };
   }
 }
