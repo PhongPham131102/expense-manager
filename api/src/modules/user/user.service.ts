@@ -9,15 +9,20 @@ import { CreateUserDto } from './dto/create-user.dto';
 import { ChangePasswordDto } from './dto/change-password.dto';
 import { UpdateProfileDto } from './dto/update-profile.dto';
 import { SetInitialBalanceDto } from './dto/set-initial-balance.dto';
+import { ForgotPasswordDto } from './dto/forgot-password.dto';
+import { ResetPasswordDto } from './dto/reset-password.dto';
 import { StatusResponse } from 'src/common/StatusResponse';
 import { formatDate } from 'src/common';
 import { Request } from 'express';
+import { EmailService } from '../email/email.service';
+import * as crypto from 'crypto';
 @Injectable()
 export class UserService {
   constructor(
     @InjectModel(User.name) private userModel: Model<UserDocument>,
-    private readonly permissionService: PermissionService
-  ) {}
+    private readonly permissionService: PermissionService,
+    private readonly emailService: EmailService
+  ) { }
   async findOneBy(filter: FilterQuery<UserDocument>) {
     return await this.userModel.findOne(filter);
   }
@@ -409,6 +414,121 @@ export class UserService {
         hasSetInitialBalance: user.hasSetInitialBalance,
         initialBalance: user.initialBalance,
       },
+    };
+  }
+
+  async forgotPassword(forgotPasswordDto: ForgotPasswordDto) {
+    const { email } = forgotPasswordDto;
+
+    console.log('Forgot password request for email:', email);
+
+    // Find user by email
+    const user = await this.userModel.findOne({ email });
+    if (!user) {
+      // Return success even if user doesn't exist (security best practice)
+      return {
+        status: StatusResponse.SUCCESS,
+        message:
+          'Nếu email tồn tại trong hệ thống, bạn sẽ nhận được mã OTP xác thực',
+      };
+    }
+
+    // Generate 6-digit OTP
+    const otpCode = Math.floor(100000 + Math.random() * 900000).toString();
+    const otpExpiry = new Date(Date.now() + 5 * 60 * 1000); // 5 minutes
+
+    // Save OTP to user
+    user.otpCode = otpCode;
+    user.otpExpiry = otpExpiry;
+    await user.save();
+
+    // Send email with OTP
+    const emailSent = await this.emailService.sendOTPEmail(email, otpCode);
+
+    if (emailSent) {
+      console.log(`OTP email sent successfully to: ${email}`);
+      return {
+        status: StatusResponse.SUCCESS,
+        message:
+          'Mã OTP đã được gửi đến email của bạn. Vui lòng kiểm tra hộp thư.',
+      };
+    } else {
+      // Clear OTP if email failed
+      user.otpCode = null;
+      user.otpExpiry = null;
+      await user.save();
+
+      return {
+        status: StatusResponse.INTERNAL_SERVER_ERROR,
+        message: 'Có lỗi xảy ra khi gửi email. Vui lòng thử lại sau.',
+      };
+    }
+  }
+
+  async verifyOTP(email: string, otpCode: string) {
+    console.log('Verify OTP request for email:', email, 'OTP:', otpCode);
+
+    // Find user by email and OTP
+    const user = await this.userModel.findOne({
+      email,
+      otpCode,
+      otpExpiry: { $gt: new Date() }, // OTP must not be expired
+    });
+
+    if (!user) {
+      return {
+        status: StatusResponse.BAD_REQUEST,
+        message: 'Mã OTP không hợp lệ hoặc đã hết hạn.',
+        valid: false,
+      };
+    }
+
+    console.log(`OTP verified successfully for user: ${user.email}`);
+
+    return {
+      status: StatusResponse.SUCCESS,
+      message: 'Mã OTP hợp lệ. Bạn có thể đặt lại mật khẩu.',
+      valid: true,
+    };
+  }
+
+  async resetPassword(resetPasswordDto: ResetPasswordDto) {
+    const { email, otpCode, newPassword } = resetPasswordDto;
+
+    console.log('Reset password request for email:', email, 'OTP:', otpCode);
+
+    // Find user by email and OTP
+    const user = await this.userModel.findOne({
+      email,
+      otpCode,
+      otpExpiry: { $gt: new Date() }, // OTP must not be expired
+    });
+
+    if (!user) {
+      return {
+        status: StatusResponse.BAD_REQUEST,
+        message:
+          'Mã OTP không hợp lệ hoặc đã hết hạn. Vui lòng yêu cầu đặt lại mật khẩu mới.',
+      };
+    }
+
+    // Hash new password
+    const hashedPassword = await bcrypt.hash(newPassword, 10);
+
+    // Update user password and clear OTP
+    user.password = hashedPassword;
+    user.otpCode = null;
+    user.otpExpiry = null;
+    user.resetToken = null;
+    user.resetTokenExpiry = null;
+    await user.save();
+
+    console.log(`Password reset successfully for user: ${user.email}`);
+
+    return {
+      status: StatusResponse.SUCCESS,
+      message:
+        'Mật khẩu đã được đặt lại thành công. Bạn có thể đăng nhập với mật khẩu mới.',
     };
   }
 }

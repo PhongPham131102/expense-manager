@@ -13,6 +13,7 @@ import { LoggingInterceptor } from './interceptors/save-logging.interceptor';
 import { AuthModule } from './modules/auth/auth.module';
 import { DatabaseModule } from './database/database.module';
 import { TransactionModule } from './modules/transaction/transaction.module';
+import { EmailModule } from './modules/email/email.module';
 
 @Module({
   imports: [
@@ -29,6 +30,7 @@ import { TransactionModule } from './modules/transaction/transaction.module';
     ActionHistoryModule,
     AuthModule,
     TransactionModule,
+    EmailModule,
   ],
   controllers: [],
   providers: [

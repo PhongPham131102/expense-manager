@@ -165,6 +165,37 @@ export interface InitialBalanceStatusResponse {
     };
 }
 
+export interface ForgotPasswordRequest {
+    email: string;
+}
+
+export interface VerifyOTPRequest {
+    email: string;
+    otpCode: string;
+}
+
+export interface ResetPasswordRequest {
+    email: string;
+    otpCode: string;
+    newPassword: string;
+}
+
+export interface ForgotPasswordResponse {
+    status: number;
+    message: string;
+}
+
+export interface VerifyOTPResponse {
+    status: number;
+    message: string;
+    valid: boolean;
+}
+
+export interface ResetPasswordResponse {
+    status: number;
+    message: string;
+}
+
 export interface GetTransactionsResponse {
     status: number;
     message: string;
@@ -402,6 +433,30 @@ class ApiService {
     // Health check
     async healthCheck(): Promise<{ status: string }> {
         return this.request<{ status: string }>('/health');
+    }
+
+    // Forgot password
+    async forgotPassword(email: string): Promise<ForgotPasswordResponse> {
+        return this.request<ForgotPasswordResponse>('/user/forgot-password', {
+            method: 'POST',
+            body: JSON.stringify({ email }),
+        }, false); // requireAuth = false
+    }
+
+    // Verify OTP
+    async verifyOTP(email: string, otpCode: string): Promise<VerifyOTPResponse> {
+        return this.request<VerifyOTPResponse>('/user/verify-otp', {
+            method: 'POST',
+            body: JSON.stringify({ email, otpCode }),
+        }, false); // requireAuth = false
+    }
+
+    // Reset password
+    async resetPassword(email: string, otpCode: string, newPassword: string): Promise<ResetPasswordResponse> {
+        return this.request<ResetPasswordResponse>('/user/reset-password', {
+            method: 'POST',
+            body: JSON.stringify({ email, otpCode, newPassword }),
+        }, false); // requireAuth = false
     }
 
 }

@@ -20,5 +20,13 @@ export class User {
   initialBalance: number;
   @Prop({ type: Boolean, default: false })
   hasSetInitialBalance: boolean;
+  @Prop({ type: String, default: null })
+  resetToken: string;
+  @Prop({ type: Date, default: null })
+  resetTokenExpiry: Date;
+  @Prop({ type: String, default: null })
+  otpCode: string;
+  @Prop({ type: Date, default: null })
+  otpExpiry: Date;
 }
 export const UserSchema = SchemaFactory.createForClass(User);
