@@ -49,24 +49,12 @@ export default function ProfileScreen() {
           <Ionicons name="chevron-forward" size={20} color="#999" />
         </TouchableOpacity>
 
-        <TouchableOpacity style={styles.menuItem}>
-          <Ionicons name="settings-outline" size={24} color="#666" />
-          <Text style={styles.menuText}>Cài đặt</Text>
-          <Ionicons name="chevron-forward" size={20} color="#999" />
-        </TouchableOpacity>
-
         <TouchableOpacity
           style={styles.menuItem}
           onPress={handleChangePassword}
         >
           <Ionicons name="lock-closed-outline" size={24} color="#666" />
           <Text style={styles.menuText}>Thay đổi mật khẩu</Text>
-          <Ionicons name="chevron-forward" size={20} color="#999" />
-        </TouchableOpacity>
-
-        <TouchableOpacity style={styles.menuItem}>
-          <Ionicons name="help-circle-outline" size={24} color="#666" />
-          <Text style={styles.menuText}>Trợ giúp</Text>
           <Ionicons name="chevron-forward" size={20} color="#999" />
         </TouchableOpacity>
 

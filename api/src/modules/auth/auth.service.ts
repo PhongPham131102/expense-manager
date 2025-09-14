@@ -22,7 +22,7 @@ export class AuthService {
     private userService: UserService,
     private jwtService: JwtService,
     private roleService: RoleService
-  ) {}
+  ) { }
   async signUp(createUserDto: CreateUserDto, request: Request, userIp: string) {
     const { username, email, role } = createUserDto;
     if (email) {
@@ -88,7 +88,7 @@ export class AuthService {
       throw new HttpException(
         {
           status: StatusResponse.USERNAME_OR_PASSWORD_IS_NOT_CORRECT,
-          message: 'User Name Or Password Is Not Correct',
+          message: 'Tên đăng nhập không tồn tại',
         },
         HttpStatus.BAD_REQUEST
       );
@@ -99,8 +99,8 @@ export class AuthService {
     if (!checkPassword)
       throw new HttpException(
         {
-          status: StatusResponse.USERNAME_OR_PASSWORD_IS_NOT_CORRECT,
-          message: 'User Name Or Password Is Not Correct',
+          status: StatusResponse.PASSWORD_INCORRECT,
+          message: 'Mật khẩu không đúng',
         },
         HttpStatus.BAD_REQUEST
       );

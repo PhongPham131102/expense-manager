@@ -66,12 +66,21 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
       // InitialBalanceGuard will handle checking if user needs to set initial balance
       router.replace("/(tabs)");
     } catch (error: any) {
-      // Extract clean error message, remove "API Error: Error:" prefix
+      // Extract clean error message
+      console.log("Login error in AuthContext:", error);
       let errorMessage = error?.message || "Đăng nhập thất bại";
+
+      // Remove common prefixes
       if (errorMessage.includes("API Error: Error:")) {
         errorMessage = errorMessage.replace("API Error: Error:", "").trim();
       }
-      showToast.error(errorMessage, "Lỗi đăng nhập");
+      if (errorMessage.includes("Error:")) {
+        errorMessage = errorMessage.replace("Error:", "").trim();
+      }
+
+      // Show specific error message
+      console.log("Final error message:", errorMessage);
+      showToast.error(errorMessage);
       throw error;
     }
   };

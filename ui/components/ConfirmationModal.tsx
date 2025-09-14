@@ -53,12 +53,10 @@ export const ConfirmationModal: React.FC<ConfirmationModalProps> = ({
     <Modal
       isVisible={isVisible}
       onBackdropPress={onCancel}
-      onSwipeComplete={onCancel}
-      swipeDirection="down"
       style={styles.modal}
       backdropOpacity={0.5}
-      animationIn="slideInUp"
-      animationOut="slideOutDown"
+      animationIn="zoomIn"
+      animationOut="zoomOut"
       animationInTiming={300}
       animationOutTiming={300}
     >
@@ -96,24 +94,25 @@ export const ConfirmationModal: React.FC<ConfirmationModalProps> = ({
 
 const styles = StyleSheet.create({
   modal: {
-    justifyContent: "flex-end",
-    margin: 0,
+    justifyContent: "center",
+    alignItems: "center",
+    margin: 20,
   },
   container: {
     backgroundColor: "#FFFFFF",
-    borderTopLeftRadius: 20,
-    borderTopRightRadius: 20,
+    borderRadius: 20,
     padding: 24,
-    paddingBottom: 34, // Extra padding for safe area
     alignItems: "center",
     shadowColor: "#000",
     shadowOffset: {
       width: 0,
-      height: -2,
+      height: 2,
     },
     shadowOpacity: 0.25,
     shadowRadius: 3.84,
     elevation: 5,
+    minWidth: 280,
+    maxWidth: 320,
   },
   iconContainer: {
     width: 64,

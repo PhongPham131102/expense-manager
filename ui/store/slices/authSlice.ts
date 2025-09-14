@@ -48,6 +48,8 @@ export const loginUser = createAsyncThunk(
                 permission: response.permission,
             };
         } catch (error: any) {
+            // API service already handles error messages, just pass it through
+            console.log('Login error in authSlice:', error);
             return rejectWithValue(error.message || 'Đăng nhập thất bại');
         }
     }

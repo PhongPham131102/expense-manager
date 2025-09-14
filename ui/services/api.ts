@@ -271,6 +271,18 @@ class ApiService {
                     // Handle backend StatusResponse codes
                     if (errorData.status) {
                         switch (errorData.status) {
+                            case 1: // SUCCESS
+                                errorMessage = 'Thành công';
+                                break;
+                            case 2: // FAIL
+                                errorMessage = 'Thao tác thất bại';
+                                break;
+                            case 3: // FOBBIDEN
+                                errorMessage = 'Không có quyền truy cập';
+                                break;
+                            case 4: // NOT_FOUND
+                                errorMessage = 'Không tìm thấy dữ liệu';
+                                break;
                             case 5: // EXISTS_USERNAME
                                 errorMessage = 'Tên đăng nhập đã tồn tại';
                                 break;
@@ -285,6 +297,15 @@ class ApiService {
                                 break;
                             case 10: // PASSWORD_INCORRECT
                                 errorMessage = 'Mật khẩu không đúng';
+                                break;
+                            case 11: // NOT_EXISTS_USER
+                                errorMessage = 'Người dùng không tồn tại';
+                                break;
+                            case 12: // BAD_REQUEST
+                                errorMessage = 'Dữ liệu không hợp lệ';
+                                break;
+                            case 500: // INTERNAL_SERVER_ERROR
+                                errorMessage = 'Lỗi máy chủ, vui lòng thử lại sau';
                                 break;
                             default:
                                 errorMessage = errorData.message || errorMessage;
