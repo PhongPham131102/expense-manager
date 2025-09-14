@@ -36,7 +36,7 @@ export default function RecordsScreen() {
   const [activeTab, setActiveTab] = useState<TabType>("day");
   const [transactions, setTransactions] = useState<Transaction[]>([]);
   const [loading, setLoading] = useState(false);
-  const [todayStats, setTodayStats] = useState({
+  const [periodStats, setPeriodStats] = useState({
     income: 0,
     expense: 0,
   });
@@ -52,7 +52,58 @@ export default function RecordsScreen() {
       let startDateParam: string | undefined;
       let endDateParam: string | undefined;
 
-      if (activeTab === "custom") {
+      const now = new Date();
+
+      if (activeTab === "day") {
+        // Lọc theo ngày hôm nay
+        const startOfDay = new Date(now);
+        startOfDay.setHours(0, 0, 0, 0);
+        startDateParam = startOfDay.toISOString();
+
+        const endOfDay = new Date(now);
+        endOfDay.setHours(23, 59, 59, 999);
+        endDateParam = endOfDay.toISOString();
+
+        console.log("Day filter:", {
+          startDate: startOfDay.toDateString(),
+          endDate: endOfDay.toDateString(),
+          startDateParam,
+          endDateParam,
+        });
+      } else if (activeTab === "week") {
+        // Lọc theo tuần (7 ngày từ hôm nay)
+        const startOfWeek = new Date(now);
+        startOfWeek.setDate(now.getDate() - 6); // 7 ngày bao gồm hôm nay
+        startOfWeek.setHours(0, 0, 0, 0);
+        startDateParam = startOfWeek.toISOString();
+
+        const endOfWeek = new Date(now);
+        endOfWeek.setHours(23, 59, 59, 999);
+        endDateParam = endOfWeek.toISOString();
+
+        console.log("Week filter:", {
+          startDate: startOfWeek.toDateString(),
+          endDate: endOfWeek.toDateString(),
+          startDateParam,
+          endDateParam,
+        });
+      } else if (activeTab === "month") {
+        // Lọc theo tháng hiện tại
+        const startOfMonth = new Date(now.getFullYear(), now.getMonth(), 1);
+        startOfMonth.setHours(0, 0, 0, 0);
+        startDateParam = startOfMonth.toISOString();
+
+        const endOfMonth = new Date(now.getFullYear(), now.getMonth() + 1, 0);
+        endOfMonth.setHours(23, 59, 59, 999);
+        endDateParam = endOfMonth.toISOString();
+
+        console.log("Month filter:", {
+          startDate: startOfMonth.toDateString(),
+          endDate: endOfMonth.toDateString(),
+          startDateParam,
+          endDateParam,
+        });
+      } else if (activeTab === "custom") {
         // Set start date to beginning of day (00:00:00)
         const startOfDay = new Date(startDate);
         startOfDay.setHours(0, 0, 0, 0);
@@ -89,7 +140,7 @@ export default function RecordsScreen() {
         );
         setTransactions(convertedTransactions);
         // Always calculate today stats from all transactions, not just filtered ones
-        await calculateTodayStats();
+        await calculatePeriodStats();
       } else {
         showToast.error("Không thể tải danh sách giao dịch");
       }
@@ -107,60 +158,78 @@ export default function RecordsScreen() {
 
   useEffect(() => {
     // Load today stats when component mounts
-    calculateTodayStats();
+    calculatePeriodStats();
 
     // Setup global refresh callback
     (global as any).refreshRecordsCallback = () => {
       loadTransactions();
-      calculateTodayStats();
+      calculatePeriodStats();
     };
 
     // Cleanup on unmount
     return () => {
       (global as any).refreshRecordsCallback = null;
     };
-  }, []);
+  }, [calculatePeriodStats]);
 
   // Reload data when screen comes into focus
   useFocusEffect(
     useCallback(() => {
       loadTransactions();
-      calculateTodayStats();
-    }, [loadTransactions])
+      calculatePeriodStats();
+    }, [loadTransactions, calculatePeriodStats])
   );
 
-  const calculateTodayStats = async () => {
+  const calculatePeriodStats = useCallback(async () => {
     try {
-      const today = new Date();
-      const startOfDay = new Date(
-        today.getFullYear(),
-        today.getMonth(),
-        today.getDate()
-      );
-      const endOfDay = new Date(
-        today.getFullYear(),
-        today.getMonth(),
-        today.getDate(),
-        23,
-        59,
-        59,
-        999
-      );
+      const now = new Date();
+      let periodStartDate: Date;
+      let periodEndDate: Date;
 
-      console.log("Calculating today stats:", {
-        startOfDay: startOfDay.toISOString(),
-        endOfDay: endOfDay.toISOString(),
+      if (activeTab === "day") {
+        // Tính cho ngày hôm nay
+        periodStartDate = new Date(now.getFullYear(), now.getMonth(), now.getDate());
+        periodEndDate = new Date(now.getFullYear(), now.getMonth(), now.getDate(), 23, 59, 59, 999);
+      } else if (activeTab === "week") {
+        // Tính cho tuần (7 ngày từ hôm nay)
+        periodStartDate = new Date(now);
+        periodStartDate.setDate(now.getDate() - 6);
+        periodStartDate.setHours(0, 0, 0, 0);
+        periodEndDate = new Date(now);
+        periodEndDate.setHours(23, 59, 59, 999);
+      } else if (activeTab === "month") {
+        // Tính cho tháng hiện tại
+        periodStartDate = new Date(now.getFullYear(), now.getMonth(), 1);
+        periodStartDate.setHours(0, 0, 0, 0);
+        periodEndDate = new Date(now.getFullYear(), now.getMonth() + 1, 0);
+        periodEndDate.setHours(23, 59, 59, 999);
+      } else if (activeTab === "custom") {
+        // Tính cho khoảng thời gian tùy chọn
+        periodStartDate = new Date(startDate);
+        periodStartDate.setHours(0, 0, 0, 0);
+        periodEndDate = new Date(endDate);
+        periodEndDate.setHours(23, 59, 59, 999);
+      } else {
+        // Default to today
+        periodStartDate = new Date(now.getFullYear(), now.getMonth(), now.getDate());
+        periodEndDate = new Date(now.getFullYear(), now.getMonth(), now.getDate(), 23, 59, 59, 999);
+      }
+
+      console.log("Calculating stats for period:", {
+        activeTab,
+        startDate: periodStartDate.toISOString(),
+        endDate: periodEndDate.toISOString(),
       });
 
-      // Load all transactions for today
+      // Load all transactions for the period
       const response = await apiService.getTransactions(
         1,
-        100, // Load more to ensure we get all today's transactions
-        startOfDay.toISOString(),
-        endOfDay.toISOString()
+        100, // Load more to ensure we get all transactions
+        periodStartDate.toISOString(),
+        periodEndDate.toISOString()
       );
 
-      console.log("Today stats response:", response);
+      console.log("Stats response:", response);
 
       if (response.status === 1 && response.data) {
         let income = 0;
@@ -180,14 +249,14 @@ export default function RecordsScreen() {
           }
         });
 
-        console.log("Today stats calculated:", { income, expense });
-        setTodayStats({ income, expense });
+        console.log("Stats calculated:", { income, expense });
+        setPeriodStats({ income, expense });
       }
     } catch (error) {
-      console.error("Error calculating today stats:", error);
-      setTodayStats({ income: 0, expense: 0 });
+      console.error("Error calculating stats:", error);
+      setPeriodStats({ income: 0, expense: 0 });
     }
-  };
+  }, [activeTab, startDate, endDate]);
 
   const formatAmount = (amount: number) => {
     return amount.toLocaleString("vi-VN");
@@ -452,24 +521,32 @@ export default function RecordsScreen() {
         {/* Custom Filter */}
         {activeTab === "custom" && renderCustomFilter()}
 
-        {/* Today's Summary */}
+        {/* Summary based on active tab */}
         <View style={styles.summaryContainer}>
           <View style={styles.summaryHeader}>
-            <Text style={styles.summaryTitle}>Hôm nay</Text>
+            <Text style={styles.summaryTitle}>
+              {activeTab === "day" && "Hôm nay"}
+              {activeTab === "week" && "Tuần này"}
+              {activeTab === "month" && "Tháng này"}
+              {activeTab === "custom" && "Khoảng thời gian"}
+            </Text>
             <Text style={styles.summaryDate}>
-              {formatDate(new Date().toISOString())}
+              {activeTab === "day" && formatDate(new Date().toISOString())}
+              {activeTab === "week" && `${formatDate(new Date(Date.now() - 6 * 24 * 60 * 60 * 1000).toISOString())} - ${formatDate(new Date().toISOString())}`}
+              {activeTab === "month" && `${new Date().getMonth() + 1}/${new Date().getFullYear()}`}
+              {activeTab === "custom" && `${formatDate(startDate.toISOString())} - ${formatDate(endDate.toISOString())}`}
             </Text>
           </View>
 
           <View style={styles.summaryStats}>
             <View style={styles.statItem}>
               <Text style={[styles.statAmount, { color: "#27AE60" }]}>
-                {formatAmount(todayStats.income)} ₫
+                {formatAmount(periodStats.income)} ₫
               </Text>
             </View>
             <View style={styles.statItem}>
               <Text style={[styles.statAmount, { color: "#E74C3C" }]}>
-                {formatAmount(todayStats.expense)} ₫
+                {formatAmount(periodStats.expense)} ₫
               </Text>
             </View>
           </View>
