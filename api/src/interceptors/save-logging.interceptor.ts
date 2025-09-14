@@ -17,7 +17,7 @@ export class LoggingInterceptor implements NestInterceptor {
     const method = request.method;
     const action_name = Reflect.getMetadata(
       'action_name',
-      context.getHandler(),
+      context.getHandler()
     );
     const action = Reflect.getMetadata('action', context.getHandler());
     const subject = Reflect.getMetadata('subject', context.getHandler());
@@ -43,7 +43,7 @@ export class LoggingInterceptor implements NestInterceptor {
             for (const param of _params)
               actionName = actionName.replace(
                 `/${param}/`,
-                request?.params[`${param}`] ?? '(Trống)',
+                request?.params[`${param}`] ?? '(Trống)'
               );
           await this.actionHistoryService.saveLog({
             action_name: actionName,
@@ -61,7 +61,7 @@ export class LoggingInterceptor implements NestInterceptor {
             newData: request['new-data'] ?? '',
           });
         }
-      }),
+      })
     );
   }
 }

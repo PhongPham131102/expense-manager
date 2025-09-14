@@ -7,13 +7,13 @@ import { Authentication } from '../../decorators/authentication.decorator';
 
 @Controller('user')
 export class UserController {
-  constructor(private readonly userService: UserService) { }
+  constructor(private readonly userService: UserService) {}
 
   @Post('change-password')
   @Authentication()
   async changePassword(
     @Body() changePasswordDto: ChangePasswordDto,
-    @Request() req: any,
+    @Request() req: any
   ) {
     const userId = req.user._id;
     return await this.userService.changePassword(userId, changePasswordDto);
@@ -23,7 +23,7 @@ export class UserController {
   @Authentication()
   async updateProfile(
     @Body() updateProfileDto: UpdateProfileDto,
-    @Request() req: any,
+    @Request() req: any
   ) {
     const userId = req.user._id;
     return await this.userService.updateProfile(userId, updateProfileDto);
@@ -33,21 +33,27 @@ export class UserController {
   @Authentication()
   async setInitialBalance(
     @Body() setInitialBalanceDto: SetInitialBalanceDto,
-    @Request() req: any,
+    @Request() req: any
   ) {
     const userId = req.user._id;
 
-    return await this.userService.setInitialBalance(userId, setInitialBalanceDto);
+    return await this.userService.setInitialBalance(
+      userId,
+      setInitialBalanceDto
+    );
   }
 
   @Put('update-initial-balance')
   @Authentication()
   async updateInitialBalance(
     @Body() setInitialBalanceDto: SetInitialBalanceDto,
-    @Request() req: any,
+    @Request() req: any
   ) {
     const userId = req.user._id;
-    return await this.userService.updateInitialBalance(userId, setInitialBalanceDto);
+    return await this.userService.updateInitialBalance(
+      userId,
+      setInitialBalanceDto
+    );
   }
 
   @Get('initial-balance-status')

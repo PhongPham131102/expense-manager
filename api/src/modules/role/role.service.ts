@@ -15,7 +15,7 @@ export class RoleService {
           message: `You Don't Have Permission To Change Admin Role`,
           status: HttpStatus.FORBIDDEN,
         },
-        HttpStatus.FORBIDDEN,
+        HttpStatus.FORBIDDEN
       );
     return await this.roleModel.findById(new Types.ObjectId(id));
   }

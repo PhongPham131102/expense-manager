@@ -10,10 +10,9 @@ import { JwtService, TokenExpiredError } from '@nestjs/jwt';
 import { RoleService } from '../role/role.service';
 import { LoginUserDto } from '../user/dto/login-user.dto';
 import { CreateUserDto } from '../user/dto/create-user.dto';
-import { Request } from 'express';
+import { Request, Response } from 'express';
 import { StatusResponse } from 'src/common/StatusResponse';
 import { formatDate } from 'src/common';
-import { Response } from 'express';
 import * as ms from 'ms';
 import { UserDocument } from '../../database/entity/user.entity';
 
@@ -22,8 +21,8 @@ export class AuthService {
   constructor(
     private userService: UserService,
     private jwtService: JwtService,
-    private roleService: RoleService,
-  ) { }
+    private roleService: RoleService
+  ) {}
   async signUp(createUserDto: CreateUserDto, request: Request, userIp: string) {
     const { username, email, role } = createUserDto;
     if (email) {
@@ -35,7 +34,7 @@ export class AuthService {
             column: 'email',
             message: 'Email Already Exists',
           },
-          HttpStatus.BAD_REQUEST,
+          HttpStatus.BAD_REQUEST
         );
     }
     const checkUserName = await this.userService.checkUsername(username);
@@ -46,7 +45,7 @@ export class AuthService {
           column: 'username',
           message: 'Username Already Exists',
         },
-        HttpStatus.BAD_REQUEST,
+        HttpStatus.BAD_REQUEST
       );
     const checkRole = await this.roleService.checkRoleById(role.toString());
     if (!checkRole)
@@ -56,12 +55,12 @@ export class AuthService {
           column: 'role',
           message: 'Role Is Not Exists',
         },
-        HttpStatus.BAD_REQUEST,
+        HttpStatus.BAD_REQUEST
       );
     const { user } = await this.userService.create(
       createUserDto,
       request,
-      userIp,
+      userIp
     );
 
     const userData = {
@@ -80,7 +79,7 @@ export class AuthService {
     _user: LoginUserDto,
     request: Request,
     userIp: string,
-    response: Response,
+    response: Response
   ) {
     const { username, password } = _user;
     const user = await this.userService.findByUsername(username);
@@ -91,11 +90,11 @@ export class AuthService {
           status: StatusResponse.USERNAME_OR_PASSWORD_IS_NOT_CORRECT,
           message: 'User Name Or Password Is Not Correct',
         },
-        HttpStatus.BAD_REQUEST,
+        HttpStatus.BAD_REQUEST
       );
     const checkPassword = await this.userService.checkPassword(
       password,
-      user.password,
+      user.password
     );
     if (!checkPassword)
       throw new HttpException(
@@ -103,7 +102,7 @@ export class AuthService {
           status: StatusResponse.USERNAME_OR_PASSWORD_IS_NOT_CORRECT,
           message: 'User Name Or Password Is Not Correct',
         },
-        HttpStatus.BAD_REQUEST,
+        HttpStatus.BAD_REQUEST
       );
     const permission = await this.userService.getUserById(user.id);
     const payload = {
@@ -120,7 +119,7 @@ export class AuthService {
       email: user.email,
     };
     const stringLog = `${user?.username} vừa đăng nhập.\nVào lúc: <b>${formatDate(
-      new Date(),
+      new Date()
     )}</b>\nIP người thực hiện: ${userIp}.`;
     request['message-log'] = stringLog;
     request['user'] = user;

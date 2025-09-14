@@ -16,13 +16,13 @@ import { ActionEnum, SubjectEnum } from 'src/enums/index.enum';
 export class IsValidEnumValue implements ValidatorConstraintInterface {
   validate(value: any) {
     try {
-      const allKeysInEnum = Object.keys(value).every((key) =>
-        Object.values(SubjectEnum).includes(key as any),
+      const allKeysInEnum = Object.keys(value).every(key =>
+        Object.values(SubjectEnum).includes(key as any)
       );
-      const allValuesInEnum = Object.values(value).every((iterator) =>
-        (iterator as any).every((action) =>
-          Object.values(ActionEnum).includes(action),
-        ),
+      const allValuesInEnum = Object.values(value).every(iterator =>
+        (iterator as any).every(action =>
+          Object.values(ActionEnum).includes(action)
+        )
       );
       return allKeysInEnum && allValuesInEnum;
     } catch (error) {
@@ -32,11 +32,11 @@ export class IsValidEnumValue implements ValidatorConstraintInterface {
 
   defaultMessage(args: ValidationArguments) {
     return `${args.property} key must be a valid value from ${Object.values(
-      SubjectEnum,
+      SubjectEnum
     ).join(', ')}. and ${
       args.property
     } value must be a valid value from ${Object.values(ActionEnum).join(
-      ', ',
+      ', '
     )}.`;
   }
 }
@@ -46,7 +46,7 @@ export function IsEnumValid(validationOptions?: ValidationOptions) {
     registerDecorator({
       name: 'isEnumValid',
       target: object.constructor,
-      propertyName: propertyName,
+      propertyName,
       options: validationOptions,
       validator: IsValidEnumValue,
     });

@@ -16,8 +16,8 @@ import { Request } from 'express';
 export class UserService {
   constructor(
     @InjectModel(User.name) private userModel: Model<UserDocument>,
-    private readonly permissionService: PermissionService,
-  ) { }
+    private readonly permissionService: PermissionService
+  ) {}
   async findOneBy(filter: FilterQuery<UserDocument>) {
     return await this.userModel.findOne(filter);
   }
@@ -53,7 +53,7 @@ export class UserService {
       .findOne({ _id: new Types.ObjectId(id) })
       .populate('role');
     const findPermission = await this.permissionService.getPermissionByRole(
-      user.role._id,
+      user.role._id
     );
 
     return {
@@ -65,7 +65,7 @@ export class UserService {
     createUserDto: CreateUserDto,
     request: Request,
     userIp: string,
-    _user?: UserDocument,
+    _user?: UserDocument
   ) {
     const { password } = createUserDto;
     const hashPassword = await bcrypt.hash(password, 10);
@@ -77,7 +77,7 @@ export class UserService {
           status: StatusResponse.EXISTS_USERNAME,
           message: 'Already Exist Username!',
         },
-        HttpStatus.BAD_REQUEST,
+        HttpStatus.BAD_REQUEST
       );
     }
     if (createUserDto?.email) {
@@ -89,7 +89,7 @@ export class UserService {
             status: StatusResponse.EXISTS_EMAIL,
             message: 'Already Exist Email!',
           },
-          HttpStatus.BAD_REQUEST,
+          HttpStatus.BAD_REQUEST
         );
       }
     }
@@ -105,7 +105,7 @@ export class UserService {
       .findById(newUser?._id)
       .populate([{ path: 'role', select: 'name' }]);
     const stringLog = `${_user?.username || 'Khách vãng lai'} vừa tạo mới 1 người dùng có các thông tin :\nTên đăng nhập: ${user.username}\nTên: ${user.name}\nEmail: ${user?.email || 'Trống'}\nVai trò: ${user?.role?.name || 'Trống'}\n${formatDate(
-      new Date(),
+      new Date()
     )}</b>\nIP người thực hiện: ${userIp}.`;
     request['new-data'] =
       `Tên đăng nhập: ${user.username}\nTên: ${user.name}\nEmail: ${user?.email || 'Trống'}\nVai trò: ${user?.role?.name || 'Trống'}\n`;
@@ -125,7 +125,7 @@ export class UserService {
       .populate([{ path: 'role', select: '_id name' }]);
 
     const findPermission = await this.permissionService.getPermissionByRole(
-      user.role._id,
+      user.role._id
     );
 
     return {
@@ -137,7 +137,7 @@ export class UserService {
     return await this.userModel.findOneAndUpdate(
       { _id },
       { refresh_token },
-      { new: true },
+      { new: true }
     );
   }
   async findUserByToken(refresh_token: string) {
@@ -164,14 +164,14 @@ export class UserService {
           status: StatusResponse.NOT_EXISTS_USER,
           message: 'Người dùng không tồn tại',
         },
-        HttpStatus.NOT_FOUND,
+        HttpStatus.NOT_FOUND
       );
     }
 
     // Verify current password
     const isCurrentPasswordValid = await this.checkPassword(
       currentPassword,
-      user.password,
+      user.password
     );
     if (!isCurrentPasswordValid) {
       throw new HttpException(
@@ -179,7 +179,7 @@ export class UserService {
           status: StatusResponse.PASSWORD_INCORRECT,
           message: 'Mật khẩu hiện tại không đúng',
         },
-        HttpStatus.BAD_REQUEST,
+        HttpStatus.BAD_REQUEST
       );
     }
 
@@ -191,7 +191,7 @@ export class UserService {
           status: StatusResponse.BAD_REQUEST,
           message: 'Mật khẩu mới phải khác mật khẩu hiện tại',
         },
-        HttpStatus.BAD_REQUEST,
+        HttpStatus.BAD_REQUEST
       );
     }
 
@@ -202,7 +202,7 @@ export class UserService {
     await this.userModel.findByIdAndUpdate(
       new Types.ObjectId(userId),
       { password: hashedNewPassword },
-      { new: true },
+      { new: true }
     );
 
     return {
@@ -222,7 +222,7 @@ export class UserService {
           status: StatusResponse.NOT_EXISTS_USER,
           message: 'Người dùng không tồn tại',
         },
-        HttpStatus.NOT_FOUND,
+        HttpStatus.NOT_FOUND
       );
     }
 
@@ -235,7 +235,7 @@ export class UserService {
             status: StatusResponse.EXISTS_USERNAME,
             message: 'Tên đăng nhập đã được sử dụng',
           },
-          HttpStatus.BAD_REQUEST,
+          HttpStatus.BAD_REQUEST
         );
       }
     }
@@ -249,7 +249,7 @@ export class UserService {
             status: StatusResponse.EXISTS_EMAIL,
             message: 'Email đã được sử dụng',
           },
-          HttpStatus.BAD_REQUEST,
+          HttpStatus.BAD_REQUEST
         );
       }
     }
@@ -281,31 +281,34 @@ export class UserService {
     };
   }
 
-  async setInitialBalance(userId: string, setInitialBalanceDto: SetInitialBalanceDto) {
+  async setInitialBalance(
+    userId: string,
+    setInitialBalanceDto: SetInitialBalanceDto
+  ) {
     const { initialBalance } = setInitialBalanceDto;
 
-    console.log("setInitialBalance called:", {
+    console.log('setInitialBalance called:', {
       userId,
       initialBalance,
-      setInitialBalanceDto
+      setInitialBalanceDto,
     });
 
     // Find user by ID
     const user = await this.userModel.findById(new Types.ObjectId(userId));
-    console.log("User found:", {
+    console.log('User found:', {
       userId: user?._id,
       hasSetInitialBalance: user?.hasSetInitialBalance,
-      initialBalance: user?.initialBalance
+      initialBalance: user?.initialBalance,
     });
 
     if (!user) {
-      console.log("User not found");
+      console.log('User not found');
       throw new HttpException(
         {
           status: StatusResponse.NOT_EXISTS_USER,
           message: 'Người dùng không tồn tại',
         },
-        HttpStatus.NOT_FOUND,
+        HttpStatus.NOT_FOUND
       );
     }
 
@@ -334,31 +337,34 @@ export class UserService {
     };
   }
 
-  async updateInitialBalance(userId: string, setInitialBalanceDto: SetInitialBalanceDto) {
+  async updateInitialBalance(
+    userId: string,
+    setInitialBalanceDto: SetInitialBalanceDto
+  ) {
     const { initialBalance } = setInitialBalanceDto;
 
-    console.log("updateInitialBalance called:", {
+    console.log('updateInitialBalance called:', {
       userId,
       initialBalance,
-      setInitialBalanceDto
+      setInitialBalanceDto,
     });
 
     // Find user by ID
     const user = await this.userModel.findById(new Types.ObjectId(userId));
-    console.log("User found:", {
+    console.log('User found:', {
       userId: user?._id,
       hasSetInitialBalance: user?.hasSetInitialBalance,
-      initialBalance: user?.initialBalance
+      initialBalance: user?.initialBalance,
     });
 
     if (!user) {
-      console.log("User not found");
+      console.log('User not found');
       throw new HttpException(
         {
           status: StatusResponse.NOT_EXISTS_USER,
           message: 'Người dùng không tồn tại',
         },
-        HttpStatus.NOT_FOUND,
+        HttpStatus.NOT_FOUND
       );
     }
 
@@ -392,7 +398,7 @@ export class UserService {
           status: StatusResponse.NOT_EXISTS_USER,
           message: 'Người dùng không tồn tại',
         },
-        HttpStatus.NOT_FOUND,
+        HttpStatus.NOT_FOUND
       );
     }
 

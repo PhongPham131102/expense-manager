@@ -12,7 +12,7 @@ import { PermissionService } from 'src/modules/permission/permission.service';
 export class RolesGuard implements CanActivate {
   constructor(
     private reflector: Reflector,
-    private readonly permissionService: PermissionService,
+    private readonly permissionService: PermissionService
   ) {}
 
   async canActivate(context: ExecutionContext): Promise<boolean> {
@@ -43,8 +43,8 @@ export class RolesGuard implements CanActivate {
 
     const getRolePermission = await this.permissionService.findOneBy({
       role: user.role._id,
-      subject: subject,
-      action: action,
+      subject,
+      action,
     });
 
     if (getRolePermission) {

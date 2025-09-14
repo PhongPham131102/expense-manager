@@ -7,6 +7,6 @@ export function Authorization(subject: SubjectEnum, action: ActionEnum) {
   return applyDecorators(
     SetMetadata('subject', subject),
     SetMetadata('action', action),
-    UseGuards(AuthGuard, RolesGuard),
+    UseGuards(AuthGuard, RolesGuard)
   );
 }

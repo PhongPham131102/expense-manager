@@ -36,7 +36,7 @@ async function bootstrap() {
       whitelist: true, // chỉ cho phép các thuộc tính có trong dto
       errorHttpStatusCode: 400, // trả về mã lỗi khi dto sai - ở đây đặt là 400 (bad request)
       transform: true, // khi bật true thì dùng  thư viện class-transformer để chuyển đổi dữ liệu đầu vào , ví dụ: chuyển đổi chuỗi thành số,....
-    }),
+    })
   );
   // Cấu hình class-validator sử dụng container Dependency Injection của NestJS
   // Điều này cho phép các custom validator trong class-validator có thể sử dụng các dịch vụ từ NestJS

@@ -15,7 +15,7 @@ export class RoleSeed implements OnModuleInit {
     try {
       for (const data of roleDefault) {
         const existingRole = await this.roleModel.findById(
-          new Types.ObjectId(data._id),
+          new Types.ObjectId(data._id)
         );
         if (!existingRole) {
           await this.roleModel.create(data);
@@ -24,7 +24,7 @@ export class RoleSeed implements OnModuleInit {
       this.logger.verbose('Init mock data for role entity success!');
     } catch (error) {
       this.logger.error(
-        `Init mock data for role entity failed - error ${error}`,
+        `Init mock data for role entity failed - error ${error}`
       );
     }
   }

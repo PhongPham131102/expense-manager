@@ -16,7 +16,7 @@ import {
 export class ActionHistoryService {
   constructor(
     @InjectModel(ActionHistory.name)
-    private readonly actionHistoryModel: Model<ActionHistoryDocument>,
+    private readonly actionHistoryModel: Model<ActionHistoryDocument>
   ) {}
 
   async saveLog({

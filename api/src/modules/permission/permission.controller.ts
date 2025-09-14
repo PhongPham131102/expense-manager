@@ -47,13 +47,13 @@ export class PermissionController {
     @Body() permission: CreatePermissionRoleDto,
     @AuthUser() user: UserDocument,
     @Req() request: Request,
-    @GetClientIP() userIp: string,
+    @GetClientIP() userIp: string
   ) {
     return this.permissionService.createPermissionRole(
       permission,
       user,
       request,
-      userIp,
+      userIp
     );
   }
   @CreatePermissionDocsAPI()
@@ -64,13 +64,13 @@ export class PermissionController {
     @Body() permission: CreatePermissionDto,
     @AuthUser() user: UserDocument,
     @Req() request: Request,
-    @GetClientIP() userIp: string,
+    @GetClientIP() userIp: string
   ) {
     return this.permissionService.createPermission(
       permission,
       user,
       request,
-      userIp,
+      userIp
     );
   }
   @DeletePermissionDocsAPI()
@@ -79,14 +79,14 @@ export class PermissionController {
     'Xóa quyền hạn có id: /id/',
     ActionLogEnum.DELETE,
     SubjectEnum.ROLE,
-    ['id'],
+    ['id']
   )
   @Delete('/:id')
   async delete(
     @Param('id', ObjectIdValidationPipe) id: Types.ObjectId,
     @AuthUser() user: UserDocument,
     @Req() request: Request,
-    @GetClientIP() userIp: string,
+    @GetClientIP() userIp: string
   ) {
     return this.permissionService.delete(id, user, request, userIp);
   }
@@ -96,7 +96,7 @@ export class PermissionController {
     'Cập nhật role và quyền hạn có id : /id/',
     ActionLogEnum.UPDATE,
     SubjectEnum.ROLE,
-    ['id'],
+    ['id']
   )
   @Put('update-permission-by-role-id/:id')
   async UpdatePermissionByRoleId(
@@ -104,14 +104,14 @@ export class PermissionController {
     @Param('id', ObjectIdValidationPipe) id: Types.ObjectId,
     @AuthUser() user: UserDocument,
     @Req() request: Request,
-    @GetClientIP() userIp: string,
+    @GetClientIP() userIp: string
   ) {
     return this.permissionService.updatePermissionByRoleId(
       id,
       permission,
       user,
       request,
-      userIp,
+      userIp
     );
   }
   @UpdatePermissionByIdDocsAPI()
@@ -120,7 +120,7 @@ export class PermissionController {
     'Cập nhật quyền hạn có id : /id/',
     ActionLogEnum.UPDATE,
     SubjectEnum.ROLE,
-    ['id'],
+    ['id']
   )
   @Put('/:id')
   async update(
@@ -128,14 +128,14 @@ export class PermissionController {
     @Param('id') id: string,
     @AuthUser() user: UserDocument,
     @Req() request: Request,
-    @GetClientIP() userIp: string,
+    @GetClientIP() userIp: string
   ) {
     return this.permissionService.updateById(
       id,
       permission,
       user,
       request,
-      userIp,
+      userIp
     );
   }
 

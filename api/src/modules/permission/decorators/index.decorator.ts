@@ -52,7 +52,7 @@ export function CreatePermissionRoleDocsAPI() {
               mapping: {
                 RoleNameIsNotEmpty: getSchemaPath(RoleNameIsNotEmptyError),
                 RoleNameAlreadyExists: getSchemaPath(
-                  RoleNameAlreadyExistsError,
+                  RoleNameAlreadyExistsError
                 ),
                 PermissionIdNotFound: getSchemaPath(PermissionIdNotFoundError),
               },
@@ -102,7 +102,7 @@ export function CreatePermissionRoleDocsAPI() {
         },
       },
     }),
-    ApiBody({ type: CreatePermissionRoleDto }),
+    ApiBody({ type: CreatePermissionRoleDto })
   );
 }
 
@@ -141,7 +141,7 @@ export function CreatePermissionDocsAPI() {
               mapping: {
                 InvalidRoleError: getSchemaPath(InvalidRoleError),
                 RoleNameAlreadyExistsError: getSchemaPath(
-                  RoleNameAlreadyExistsError,
+                  RoleNameAlreadyExistsError
                 ),
               },
             },
@@ -188,7 +188,7 @@ export function CreatePermissionDocsAPI() {
         },
       },
     }),
-    ApiBody({ type: CreatePermissionDto }),
+    ApiBody({ type: CreatePermissionDto })
   );
 }
 
@@ -261,7 +261,7 @@ export function DeletePermissionDocsAPI() {
           },
         },
       },
-    }),
+    })
   );
 }
 
@@ -306,7 +306,7 @@ export function UpdatePermissionByRoleIdDocsAPI() {
               propertyName: 'errorType',
               mapping: {
                 RoleNameAlreadyExists: getSchemaPath(
-                  RoleNameAlreadyExistsError,
+                  RoleNameAlreadyExistsError
                 ),
                 PermissionIdNotFound: getSchemaPath(PermissionIdNotFoundError),
               },
@@ -345,7 +345,7 @@ export function UpdatePermissionByRoleIdDocsAPI() {
           },
         },
       },
-    }),
+    })
   );
 }
 
@@ -405,7 +405,7 @@ export function UpdatePermissionByIdDocsAPI() {
           message: 'Permission Id Is Not Found',
         },
       },
-    }),
+    })
   );
 }
 
@@ -444,7 +444,7 @@ export function GetAllPermissionDocsAPI() {
           message: 'Internal Server Error',
         },
       },
-    }),
+    })
   );
 }
 
@@ -490,7 +490,7 @@ export function GetAllByRoleIdDocsAPI() {
           message: 'Role Id Not Found',
         },
       },
-    }),
+    })
   );
 }
 
@@ -533,6 +533,6 @@ export function GetPermissionByIdDocsAPI() {
           message: 'Permission Id Is Not Found',
         },
       },
-    }),
+    })
   );
 }

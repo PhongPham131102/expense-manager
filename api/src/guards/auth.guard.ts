@@ -11,7 +11,7 @@ import { UserService } from 'src/modules/user/user.service';
 export class AuthGuard implements CanActivate {
   constructor(
     private jwtService: JwtService,
-    private readonly userService: UserService,
+    private readonly userService: UserService
   ) {}
   private extractToken(request: Request): string | undefined {
     const [type, token] = request.headers.authorization?.split(' ') ?? [];

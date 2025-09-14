@@ -13,7 +13,7 @@ export class LoggerInterceptor implements NestInterceptor {
   private readonly logger = new Logger('HTTP');
   intercept(
     context: ExecutionContext,
-    next: CallHandler<any>,
+    next: CallHandler<any>
   ): Observable<any> | Promise<Observable<any>> {
     if (!(context.getType() === 'http')) next.handle();
     const ctx = context.switchToHttp();
@@ -30,9 +30,9 @@ export class LoggerInterceptor implements NestInterceptor {
     };
     return next.handle().pipe(
       tap({
-        next: (res) => this.logger.verbose(loggerStr(res?.status)),
-        error: (res) => this.logger.verbose(loggerStr(res?.status)),
-      }),
+        next: res => this.logger.verbose(loggerStr(res?.status)),
+        error: res => this.logger.verbose(loggerStr(res?.status)),
+      })
     );
   }
 }

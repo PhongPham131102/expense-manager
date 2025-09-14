@@ -13,7 +13,7 @@ export class PermissionSeeder implements OnModuleInit {
     @InjectModel(Permission.name)
     private readonly permissionModel: Model<PermissionDocument>,
     @InjectModel(Role.name)
-    private readonly roleModel: Model<Role>,
+    private readonly roleModel: Model<Role>
   ) {}
   onModuleInit() {
     this.seed();
@@ -24,7 +24,7 @@ export class PermissionSeeder implements OnModuleInit {
       if (count === 0) {
         for (const data of permisstionDefault) {
           const existingPermission = await this.permissionModel.findById(
-            new Types.ObjectId(data._id),
+            new Types.ObjectId(data._id)
           );
           if (!existingPermission) {
             await this.permissionModel.create({

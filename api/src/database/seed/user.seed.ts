@@ -14,7 +14,7 @@ export class UserSeeder implements OnModuleInit {
     try {
       for (const user of usersDefault) {
         const checkUser = await this.userModel.findById(
-          new Types.ObjectId(user._id),
+          new Types.ObjectId(user._id)
         );
         if (checkUser) continue;
         await this.userModel.create({

@@ -35,7 +35,7 @@ export class PermissionService {
     @InjectModel(Permission.name)
     private readonly permissionModel: Model<PermissionDocument>,
     @InjectModel(Role.name)
-    private readonly roleModel: Model<RoleDocument>,
+    private readonly roleModel: Model<RoleDocument>
   ) {}
   private readonly logger = new Logger(PermissionService.name);
 
@@ -59,7 +59,7 @@ export class PermissionService {
     permission: CreatePermissionRoleDto,
     user: UserDocument,
     request: Request,
-    userIp: string,
+    userIp: string
   ) {
     if (!permission.role)
       throw new HttpException(
@@ -67,7 +67,7 @@ export class PermissionService {
           status: StatusResponse.FAIL,
           message: 'Role Name Is Not Empty',
         },
-        HttpStatus.BAD_REQUEST,
+        HttpStatus.BAD_REQUEST
       );
     const checkRole = await this.roleModel.findOne({
       name: permission.role,
@@ -78,7 +78,7 @@ export class PermissionService {
           status: StatusResponse.FAIL,
           message: 'Role Name Adready Exist',
         },
-        HttpStatus.BAD_REQUEST,
+        HttpStatus.BAD_REQUEST
       );
 
     const role = await this.roleModel.create({ name: permission.role });
@@ -87,7 +87,7 @@ export class PermissionService {
       newData += `Với các quyền hạn cụ thể sau:\n`;
     const permissions = [];
     for (const [key, value] of Object.entries(permission.permission)) {
-      if (value.some((e) => e === ActionEnum.MANAGE)) {
+      if (value.some(e => e === ActionEnum.MANAGE)) {
         const _permission = await this.permissionModel.create({
           role: role._id,
           action: [ActionEnum.MANAGE],
@@ -101,12 +101,12 @@ export class PermissionService {
           action: [...value],
           subject: key,
         });
-        newData += `${subjectMapping[key]} : ${!!value?.length ? [...value].map((val) => actionMapping[val])?.join(', ') : '(Trống)'}\n`;
+        newData += `${subjectMapping[key]} : ${!!value?.length ? [...value].map(val => actionMapping[val])?.join(', ') : '(Trống)'}\n`;
         permissions.push(_permission);
       }
     }
     const stringLog = `${user?.username} vừa tạo mới role và quyền hạn với các thông tin sau:\n${newData}\nVào lúc: <b>${formatDate(
-      new Date(),
+      new Date()
     )}</b>\nIP người thực hiện: ${userIp}.`;
     request['new-data'] = newData;
     request['message-log'] = stringLog;
@@ -123,7 +123,7 @@ export class PermissionService {
     permission: CreatePermissionDto,
     user: UserDocument,
     request: Request,
-    userIp: string,
+    userIp: string
   ) {
     const { role, subject, action } = permission;
     const _role = await this.roleModel.findById(new Types.ObjectId(role));
@@ -133,7 +133,7 @@ export class PermissionService {
           status: StatusResponse.FAIL,
           message: `Not Found Role By Id: ${role}`,
         },
-        HttpStatus.BAD_REQUEST,
+        HttpStatus.BAD_REQUEST
       );
     if (role === adminRole)
       throw new ForbiddenException({
@@ -149,7 +149,7 @@ export class PermissionService {
           status: StatusResponse.FAIL,
           message: 'This Role And Subject Already Exists In Database',
         },
-        HttpStatus.BAD_REQUEST,
+        HttpStatus.BAD_REQUEST
       );
 
     const _permission = await this.permissionModel.create({
@@ -157,9 +157,9 @@ export class PermissionService {
       action,
       subject,
     });
-    const newData = `${subjectMapping[subject]} : ${!!action?.length ? [...action].map((val) => actionMapping[val])?.join(', ') : '(Trống)'}\n`;
+    const newData = `${subjectMapping[subject]} : ${!!action?.length ? [...action].map(val => actionMapping[val])?.join(', ') : '(Trống)'}\n`;
     const stringLog = `${user?.username} vừa tạo mới quyền hạn cho role ${_role.name} với các thông tin sau :\n${newData}\nVào lúc: <b>${formatDate(
-      new Date(),
+      new Date()
     )}</b>\nIP người thực hiện: ${userIp}.`;
     request['new-data'] = `tên role: ${_role.name},\n${newData}`;
     request['message-log'] = stringLog;
@@ -173,7 +173,7 @@ export class PermissionService {
     id: Types.ObjectId,
     user: UserDocument,
     request: Request,
-    userIp: string,
+    userIp: string
   ) {
     const permission = await this.permissionModel.findById(id).populate('role');
 
@@ -183,7 +183,7 @@ export class PermissionService {
           status: StatusResponse.FAIL,
           message: 'Permission Id Not Found',
         },
-        HttpStatus.BAD_REQUEST,
+        HttpStatus.BAD_REQUEST
       );
     if ((permission.role as any as Types.ObjectId)?.toString() === adminRole)
       throw new HttpException(
@@ -191,13 +191,13 @@ export class PermissionService {
           message: `You Don't Have Permission To Change Admin Role's Permission`,
           status: HttpStatus.FORBIDDEN,
         },
-        HttpStatus.FORBIDDEN,
+        HttpStatus.FORBIDDEN
       );
     await permission.deleteOne();
     const stringLog = `${user?.username} vừa xóa quyền hạn ${subjectMapping[permission.subject]} của role ${permission.role.name}\nVào lúc: <b>${formatDate(
-      new Date(),
+      new Date()
     )}</b>\nIP người thực hiện: ${userIp}.`;
-    const oldData = `Tên role: ${permission.role.name},\n${subjectMapping[permission.subject]} : ${!!permission.action?.length ? [...permission.action].map((val) => actionMapping[val])?.join(', ') : '(Trống)'}\n`;
+    const oldData = `Tên role: ${permission.role.name},\n${subjectMapping[permission.subject]} : ${!!permission.action?.length ? [...permission.action].map(val => actionMapping[val])?.join(', ') : '(Trống)'}\n`;
     request['old-data'] = oldData;
     request['message-log'] = stringLog;
     return {
@@ -210,19 +210,19 @@ export class PermissionService {
     permission: UpdatePermisstionDto,
     user: UserDocument,
     request: Request,
-    userIp: string,
+    userIp: string
   ) {
     const _permission = await this.permissionModel
       .findById(new Types.ObjectId(id))
       .populate('role');
-    const oldData = `Tên role: ${_permission.role.name},\n${subjectMapping[_permission.subject]} : ${_permission.action?.length ? [..._permission.action].map((val) => actionMapping[val])?.join(', ') : '(Trống)'}\n`;
+    const oldData = `Tên role: ${_permission.role.name},\n${subjectMapping[_permission.subject]} : ${_permission.action?.length ? [..._permission.action].map(val => actionMapping[val])?.join(', ') : '(Trống)'}\n`;
     if (!permission)
       throw new HttpException(
         {
           status: StatusResponse.FAIL,
           message: 'Permission Id Is Not Found',
         },
-        HttpStatus.BAD_REQUEST,
+        HttpStatus.BAD_REQUEST
       );
     if ((_permission.role as any as Types.ObjectId)?.toString() === adminRole)
       throw new HttpException(
@@ -230,15 +230,15 @@ export class PermissionService {
           message: `You Don't Have Permission To Change Admin Role's Permission`,
           status: HttpStatus.FORBIDDEN,
         },
-        HttpStatus.FORBIDDEN,
+        HttpStatus.FORBIDDEN
       );
     const { action, subject } = permission;
     _permission.action = action;
     _permission.subject = subject;
     _permission.save();
-    const newData = `Tên role: ${_permission.role.name},\n${subjectMapping[_permission.subject]} : ${!!_permission.action?.length ? [..._permission.action].map((val) => actionMapping[val])?.join(', ') : '(Trống)'}\n`;
+    const newData = `Tên role: ${_permission.role.name},\n${subjectMapping[_permission.subject]} : ${!!_permission.action?.length ? [..._permission.action].map(val => actionMapping[val])?.join(', ') : '(Trống)'}\n`;
     const stringLog = `${user?.username} vừa cập nhật quyền hạn\nVào lúc: <b>${formatDate(
-      new Date(),
+      new Date()
     )}</b>\nIP người thực hiện: ${userIp}.`;
     request['new-data'] = newData;
     request['old-data'] = oldData;
@@ -251,7 +251,7 @@ export class PermissionService {
   }
   async getById(id: string) {
     const permission = await this.permissionModel.findById(
-      new Types.ObjectId(id),
+      new Types.ObjectId(id)
     );
     if (!permission)
       throw new HttpException(
@@ -259,7 +259,7 @@ export class PermissionService {
           status: StatusResponse.FAIL,
           message: 'Permission Id Is Not Found',
         },
-        HttpStatus.BAD_REQUEST,
+        HttpStatus.BAD_REQUEST
       );
     return {
       status: StatusResponse.SUCCESS,
@@ -280,7 +280,7 @@ export class PermissionService {
     permission: UpdatePermissionRoleDto,
     user: UserDocument,
     request: Request,
-    userIp: string,
+    userIp: string
   ) {
     if (id.toString() === adminRole)
       throw new ForbiddenException({
@@ -293,7 +293,7 @@ export class PermissionService {
           status: StatusResponse.FAIL,
           message: `Not Found Role By Id: ${role}`,
         },
-        HttpStatus.BAD_REQUEST,
+        HttpStatus.BAD_REQUEST
       );
     const checkRoleName = await this.roleModel.findOne({
       _id: { $ne: role._id },
@@ -307,7 +307,7 @@ export class PermissionService {
           status: StatusResponse.FAIL,
           message: 'Role Name Adready Exist',
         },
-        HttpStatus.BAD_REQUEST,
+        HttpStatus.BAD_REQUEST
       );
     role.name = permission.role;
     const permissions = [];
@@ -318,13 +318,13 @@ export class PermissionService {
     else oldData += 'Chưa khởi tạo quyền hạn nào.';
 
     for (const pers of oldPermissions)
-      oldData += `${subjectMapping[pers.subject]} : ${!!pers.action?.length ? [...pers.action].map((val) => actionMapping[val])?.join(', ') : '(Trống)'}\n`;
+      oldData += `${subjectMapping[pers.subject]} : ${!!pers.action?.length ? [...pers.action].map(val => actionMapping[val])?.join(', ') : '(Trống)'}\n`;
     let newData = `Tên role: ${role.name}\n`;
     if (!!Object.entries(permission.permission).length)
       newData += `Với các quyền hạn cụ thể sau:\n`;
     else newData += `Chưa khởi tạo quyền hạn nào`;
     for (const [key, value] of Object.entries(permission.permission)) {
-      if (value.some((e) => e === ActionEnum.MANAGE)) {
+      if (value.some(e => e === ActionEnum.MANAGE)) {
         const _permission =
           (await this.permissionModel.findOneAndUpdate(
             {
@@ -335,7 +335,7 @@ export class PermissionService {
               action: [ActionEnum.MANAGE],
               subject: key,
             },
-            { new: true },
+            { new: true }
           )) ||
           (await this.permissionModel.create({
             role: id,
@@ -355,21 +355,21 @@ export class PermissionService {
               action: [...value],
               subject: key,
             },
-            { new: true },
+            { new: true }
           )) ||
           (await this.permissionModel.create({
             role: id,
             action: [...value],
             subject: key,
           }));
-        newData += `${subjectMapping[key]} : ${!!value?.length ? [...value].map((val) => actionMapping[val])?.join(', ') : '(Trống)'}\n`;
+        newData += `${subjectMapping[key]} : ${!!value?.length ? [...value].map(val => actionMapping[val])?.join(', ') : '(Trống)'}\n`;
         permissions.push(_permission);
       }
     }
     await role.save();
     const stringLog = `${user?.username} vừa cập nhật role và quyền hạn với các thông tin sau:
             \n${newData}\nVào lúc: <b>${formatDate(
-              new Date(),
+              new Date()
             )}</b>\nIP người thực hiện: ${userIp}.`;
     request['new-data'] = newData;
     request['old-data'] = oldData;

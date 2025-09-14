@@ -26,7 +26,7 @@ export function IsObjectId(validationOptions?: ValidationOptions) {
   return function (object: Record<string, any>, propertyName: string) {
     registerDecorator({
       target: object.constructor,
-      propertyName: propertyName,
+      propertyName,
       options: validationOptions,
       constraints: [],
       validator: IsObjectIdConstraint,
@@ -36,9 +36,9 @@ export function IsObjectId(validationOptions?: ValidationOptions) {
 @ValidatorConstraint({ async: false })
 class IsObjectIdArrayConstraint implements ValidatorConstraintInterface {
   validate(ids: any[], args: ValidationArguments) {
-    if (Array.isArray(ids) && ids.every((id) => Types.ObjectId.isValid(id))) {
+    if (Array.isArray(ids) && ids.every(id => Types.ObjectId.isValid(id))) {
       (args.object as any)[args.property] = ids.map(
-        (id) => new Types.ObjectId(id as string),
+        id => new Types.ObjectId(id as string)
       );
       return true;
     }
@@ -54,7 +54,7 @@ export function IsObjectIdArray(validationOptions?: ValidationOptions) {
   return function (object: Record<string, any>, propertyName: string) {
     registerDecorator({
       target: object.constructor,
-      propertyName: propertyName,
+      propertyName,
       options: validationOptions,
       constraints: [],
       validator: IsObjectIdArrayConstraint,

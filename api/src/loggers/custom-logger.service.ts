@@ -20,7 +20,7 @@ export class CustomLoggerService implements LoggerService {
     context: string,
     message: string,
     color: Function,
-    icon: string = '',
+    icon: string = ''
   ) {
     const timestamp = this.formatTimestamp();
     const pid = this.getPID();
@@ -30,7 +30,7 @@ export class CustomLoggerService implements LoggerService {
   log(message: string, context = 'Application') {
     if (this.logLevels.includes('log')) {
       console.log(
-        this.formatMessage(bold(blue('[LOG]')), context, message, blue, '✨'),
+        this.formatMessage(bold(blue('[LOG]')), context, message, blue, '✨')
       );
     }
   }
@@ -38,7 +38,7 @@ export class CustomLoggerService implements LoggerService {
   error(message: string, trace?: string, context = 'Application') {
     if (this.logLevels.includes('error')) {
       console.error(
-        this.formatMessage(bold(red('[ERROR]')), context, message, red, '❌'),
+        this.formatMessage(bold(red('[ERROR]')), context, message, red, '❌')
       );
       if (trace) {
         console.error(red(trace));
@@ -54,8 +54,8 @@ export class CustomLoggerService implements LoggerService {
           context,
           message,
           yellow,
-          '⚠️',
-        ),
+          '⚠️'
+        )
       );
     }
   }
@@ -68,8 +68,8 @@ export class CustomLoggerService implements LoggerService {
           context,
           message,
           green,
-          '🐞',
-        ),
+          '🐞'
+        )
       );
     }
   }
@@ -82,8 +82,8 @@ export class CustomLoggerService implements LoggerService {
           context,
           message,
           cyan,
-          '🎉',
-        ),
+          '🎉'
+        )
       );
     }
   }

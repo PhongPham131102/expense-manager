@@ -88,7 +88,7 @@ export function SignUpDocsAPI() {
         },
       },
     }),
-    ApiBody({ type: CreateUserDto }),
+    ApiBody({ type: CreateUserDto })
   );
 }
 export function SignInDocsAPI() {
@@ -135,7 +135,7 @@ export function SignInDocsAPI() {
         },
       },
     }),
-    ApiBody({ type: LoginUserDto }),
+    ApiBody({ type: LoginUserDto })
   );
 }
 export function RefreshTokenDocsAPI() {
@@ -238,7 +238,7 @@ export function RefreshTokenDocsAPI() {
           },
         },
       },
-    }),
+    })
   );
 }
 export function LogOutDocsAPI() {
@@ -252,6 +252,6 @@ export function LogOutDocsAPI() {
     ApiResponse({
       status: 204,
       description: 'User successfully logged out. No content returned.',
-    }),
+    })
   );
 }
