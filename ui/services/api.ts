@@ -2,9 +2,7 @@ import { Platform } from 'react-native';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 
 // API Configuration
-const API_BASE_URL = Platform.OS === 'ios'
-    ? 'http://localhost:5202/api/v1'
-    : 'http://10.0.2.2:5202/api/v1'; // Android emulator
+const API_BASE_URL = 'https://apiv1.product-manager.store/api/v1';
 
 export interface LoginRequest {
     username: string;
