@@ -11,6 +11,7 @@ import {
 import { router } from "expo-router";
 import { StatusBar } from "expo-status-bar";
 import { Ionicons } from "@expo/vector-icons";
+import { useSafeAreaInsets } from "react-native-safe-area-context";
 
 import { CustomInput } from "@/components/auth/CustomInput";
 import { CustomButton } from "@/components/auth/CustomButton";
@@ -18,6 +19,7 @@ import { LogoHeader } from "@/components/auth/LogoHeader";
 import { useAuth } from "@/contexts/AuthContext";
 
 export default function RegisterScreen() {
+  const insets = useSafeAreaInsets();
   const { register } = useAuth();
   const [formData, setFormData] = useState({
     username: "",
@@ -98,7 +100,12 @@ export default function RegisterScreen() {
         showsVerticalScrollIndicator={false}
         keyboardShouldPersistTaps="handled"
       >
-        <View style={styles.header}>
+        <View
+          style={[
+            styles.header,
+            { paddingTop: 16 + (Platform.OS === "ios" ? insets.top : 0) },
+          ]}
+        >
           <TouchableOpacity
             style={styles.backButton}
             onPress={() => router.back()}
