@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useCallback } from "react";
 import {
   View,
   Text,
@@ -10,6 +10,7 @@ import {
   Image,
   Platform,
   Alert,
+  Modal,
 } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
 import { router, useLocalSearchParams } from "expo-router";
@@ -40,9 +41,7 @@ export default function AddRecordScreen() {
   }>();
   const isEdit = !!recordId;
 
-  const [loading, setLoading] = useState(false);
   const [saving, setSaving] = useState(false);
-  const [transaction, setTransaction] = useState<any>(null);
 
   const [amount, setAmount] = useState("");
   const [category, setCategory] = useState<{
@@ -59,6 +58,8 @@ export default function AddRecordScreen() {
   const [isIncome, setIsIncome] = useState(false);
   const [showDatePicker, setShowDatePicker] = useState(false);
   const [showTimePicker, setShowTimePicker] = useState(false);
+  const [tempDate, setTempDate] = useState<Date>(new Date());
+  const [tempTime, setTempTime] = useState<Date>(new Date());
 
   useEffect(() => {
     // Set up global callback
@@ -74,29 +75,12 @@ export default function AddRecordScreen() {
     };
   }, []);
 
-  useEffect(() => {
-    if (isEdit && recordId) {
-      loadTransaction();
-    }
-  }, [isEdit, recordId]);
-
-  const triggerRefresh = () => {
-    // Trigger refresh in parent component
-    if (refreshCallback) {
-      // Use global callback to refresh records and dashboard
-      (global as any).refreshRecordsCallback?.();
-      (global as any).refreshDashboardCallback?.();
-    }
-  };
-
-  const loadTransaction = async () => {
+  const loadTransaction = useCallback(async () => {
     try {
-      setLoading(true);
       const response = await apiService.getTransactionById(recordId!);
 
       if (response.status === 1 && response.data) {
         const transactionData = response.data;
-        setTransaction(transactionData);
 
         // Populate form with existing data
         setAmount(formatAmount(transactionData.amount.toString()));
@@ -120,8 +104,21 @@ export default function AddRecordScreen() {
       console.error("Error loading transaction:", error);
       showToast.error("Có lỗi xảy ra khi tải dữ liệu");
       router.back();
-    } finally {
-      setLoading(false);
+    }
+  }, [recordId]);
+
+  useEffect(() => {
+    if (isEdit && recordId) {
+      loadTransaction();
+    }
+  }, [isEdit, recordId, loadTransaction]);
+
+  const triggerRefresh = () => {
+    // Trigger refresh in parent component
+    if (refreshCallback) {
+      // Use global callback to refresh records and dashboard
+      (global as any).refreshRecordsCallback?.();
+      (global as any).refreshDashboardCallback?.();
     }
   };
 
@@ -149,6 +146,10 @@ export default function AddRecordScreen() {
   };
 
   const handleDateChange = (event: any, selectedDate?: Date) => {
+    if (Platform.OS === "ios") {
+      if (selectedDate) setTempDate(selectedDate);
+      return;
+    }
     setShowDatePicker(false);
     if (selectedDate) {
       setSelectedDate(selectedDate);
@@ -156,6 +157,10 @@ export default function AddRecordScreen() {
   };
 
   const handleTimeChange = (event: any, selectedTime?: Date) => {
+    if (Platform.OS === "ios") {
+      if (selectedTime) setTempTime(selectedTime);
+      return;
+    }
     setShowTimePicker(false);
     if (selectedTime) {
       setSelectedTime(selectedTime);
@@ -163,10 +168,16 @@ export default function AddRecordScreen() {
   };
 
   const openDatePicker = () => {
+    if (Platform.OS === "ios") {
+      setTempDate(selectedDate);
+    }
     setShowDatePicker(true);
   };
 
   const openTimePicker = () => {
+    if (Platform.OS === "ios") {
+      setTempTime(selectedTime);
+    }
     setShowTimePicker(true);
   };
 
@@ -579,24 +590,103 @@ export default function AddRecordScreen() {
         </TouchableOpacity>
       </View>
 
-      {/* Date Picker */}
-      {showDatePicker && (
+      {/* Date Picker - Android inline */}
+      {showDatePicker && Platform.OS !== "ios" && (
         <DateTimePicker
           value={selectedDate}
           mode="date"
-          display={Platform.OS === "ios" ? "spinner" : "default"}
+          display="default"
           onChange={handleDateChange}
         />
       )}
 
-      {/* Time Picker */}
-      {showTimePicker && (
+      {/* Time Picker - Android inline */}
+      {showTimePicker && Platform.OS !== "ios" && (
         <DateTimePicker
           value={selectedTime}
           mode="time"
-          display={Platform.OS === "ios" ? "spinner" : "default"}
+          display="default"
           onChange={handleTimeChange}
         />
+      )}
+
+      {/* iOS Date Picker - Modal */}
+      {Platform.OS === "ios" && (
+        <>
+          <Modal
+            visible={showDatePicker}
+            transparent
+            animationType="slide"
+            onRequestClose={() => setShowDatePicker(false)}
+          >
+            <View style={styles.modalBackdrop}>
+              <View style={styles.modalContainer}>
+                <View style={styles.modalHeader}>
+                  <TouchableOpacity onPress={() => setShowDatePicker(false)}>
+                    <Text style={styles.modalAction}>Hủy</Text>
+                  </TouchableOpacity>
+                  <Text style={styles.modalTitle}>Chọn ngày</Text>
+                  <TouchableOpacity
+                    onPress={() => {
+                      setSelectedDate(tempDate);
+                      setShowDatePicker(false);
+                    }}
+                  >
+                    <Text style={styles.modalAction}>Xong</Text>
+                  </TouchableOpacity>
+                </View>
+                <DateTimePicker
+                  value={tempDate}
+                  mode="date"
+                  display="spinner"
+                  themeVariant="light"
+                  textColor="#000"
+                  onChange={handleDateChange}
+                  style={styles.iosPicker}
+                />
+              </View>
+            </View>
+          </Modal>
+
+          {/* iOS Time Picker - Modal */}
+          <Modal
+            visible={showTimePicker}
+            transparent
+            animationType="slide"
+            onRequestClose={() => setShowTimePicker(false)}
+          >
+            <View style={styles.modalBackdrop}>
+              <View style={styles.modalContainer}>
+                <View style={styles.modalHeader}>
+                  <TouchableOpacity onPress={() => setShowTimePicker(false)}>
+                    <Text style={styles.modalAction}>Hủy</Text>
+                  </TouchableOpacity>
+                  <Text style={styles.modalTitle}>Chọn giờ</Text>
+                  <TouchableOpacity
+                    onPress={() => {
+                      setSelectedTime(tempTime);
+                      setShowTimePicker(false);
+                    }}
+                  >
+                    <Text style={styles.modalAction}>Xong</Text>
+                  </TouchableOpacity>
+                </View>
+                <View style={styles.pickerContainer}>
+                  <DateTimePicker
+                    value={tempTime}
+                    mode="time"
+                    display="spinner"
+                    themeVariant="light"
+                    minuteInterval={1}
+                    textColor="#000"
+                    onChange={handleTimeChange}
+                    style={styles.iosPicker}
+                  />
+                </View>
+              </View>
+            </View>
+          </Modal>
+        </>
       )}
     </View>
   );
@@ -793,5 +883,43 @@ const styles = StyleSheet.create({
     fontSize: 16,
     fontWeight: "bold",
     marginLeft: 8,
+  },
+  modalBackdrop: {
+    flex: 1,
+    backgroundColor: "rgba(0,0,0,0.3)",
+    justifyContent: "flex-end",
+  },
+  modalContainer: {
+    backgroundColor: "#fff",
+    borderTopLeftRadius: 12,
+    borderTopRightRadius: 12,
+    paddingBottom: 16,
+  },
+  modalHeader: {
+    flexDirection: "row",
+    justifyContent: "space-between",
+    alignItems: "center",
+    paddingHorizontal: 16,
+    paddingTop: 12,
+    paddingBottom: 8,
+    borderBottomWidth: 1,
+    borderBottomColor: "#eee",
+  },
+  modalTitle: {
+    fontSize: 16,
+    fontWeight: "600",
+    color: "#333",
+  },
+  modalAction: {
+    fontSize: 16,
+    color: "#27AE60",
+    fontWeight: "600",
+  },
+  iosPicker: {
+    marginTop: 4,
+  },
+  pickerContainer: {
+    height: 220,
+    justifyContent: "center",
   },
 });

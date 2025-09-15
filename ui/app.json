@@ -9,7 +9,13 @@
     "userInterfaceStyle": "automatic",
     "newArchEnabled": true,
     "ios": {
-      "supportsTablet": true
+      "supportsTablet": true,
+      "infoPlist": {
+        "NSCameraUsageDescription": "Ứng dụng cần truy cập máy ảnh để chụp ảnh hóa đơn/giao dịch.",
+        "NSPhotoLibraryUsageDescription": "Ứng dụng cần truy cập thư viện ảnh để chọn ảnh đính kèm giao dịch.",
+        "NSPhotoLibraryAddUsageDescription": "Ứng dụng cần quyền lưu ảnh vào thư viện.",
+        "NSMicrophoneUsageDescription": "Ứng dụng không dùng micro, bạn có thể từ chối."
+      }
     },
     "android": {
       "adaptiveIcon": {

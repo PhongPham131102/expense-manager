@@ -6,7 +6,8 @@ import {
   TouchableOpacity,
   ScrollView,
   StatusBar,
-  FlatList,
+  Platform,
+  Modal,
 } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
 import { router, useFocusEffect } from "expo-router";
@@ -44,6 +45,8 @@ export default function RecordsScreen() {
   const [endDate, setEndDate] = useState(new Date());
   const [showStartDatePicker, setShowStartDatePicker] = useState(false);
   const [showEndDatePicker, setShowEndDatePicker] = useState(false);
+  const [tempStartDate, setTempStartDate] = useState<Date>(new Date());
+  const [tempEndDate, setTempEndDate] = useState<Date>(new Date());
 
   const loadTransactions = useCallback(async () => {
     try {
@@ -156,6 +159,87 @@ export default function RecordsScreen() {
     loadTransactions();
   }, [loadTransactions]);
 
+  const calculatePeriodStats = useCallback(async () => {
+    try {
+      const now = new Date();
+      let periodStartDate: Date;
+      let periodEndDate: Date;
+
+      if (activeTab === "day") {
+        periodStartDate = new Date(
+          now.getFullYear(),
+          now.getMonth(),
+          now.getDate()
+        );
+        periodEndDate = new Date(
+          now.getFullYear(),
+          now.getMonth(),
+          now.getDate(),
+          23,
+          59,
+          59,
+          999
+        );
+      } else if (activeTab === "week") {
+        periodStartDate = new Date(now);
+        periodStartDate.setDate(now.getDate() - 6);
+        periodStartDate.setHours(0, 0, 0, 0);
+        periodEndDate = new Date(now);
+        periodEndDate.setHours(23, 59, 59, 999);
+      } else if (activeTab === "month") {
+        periodStartDate = new Date(now.getFullYear(), now.getMonth(), 1);
+        periodStartDate.setHours(0, 0, 0, 0);
+        periodEndDate = new Date(now.getFullYear(), now.getMonth() + 1, 0);
+        periodEndDate.setHours(23, 59, 59, 999);
+      } else if (activeTab === "custom") {
+        periodStartDate = new Date(startDate);
+        periodStartDate.setHours(0, 0, 0, 0);
+        periodEndDate = new Date(endDate);
+        periodEndDate.setHours(23, 59, 59, 999);
+      } else {
+        periodStartDate = new Date(
+          now.getFullYear(),
+          now.getMonth(),
+          now.getDate()
+        );
+        periodEndDate = new Date(
+          now.getFullYear(),
+          now.getMonth(),
+          now.getDate(),
+          23,
+          59,
+          59,
+          999
+        );
+      }
+
+      const response = await apiService.getTransactions(
+        1,
+        100,
+        periodStartDate.toISOString(),
+        periodEndDate.toISOString()
+      );
+
+      if (response.status === 1 && response.data) {
+        let income = 0;
+        let expense = 0;
+
+        response.data.transactions.forEach((transaction) => {
+          if (transaction.isIncome) {
+            income += transaction.amount;
+          } else {
+            expense += transaction.amount;
+          }
+        });
+
+        setPeriodStats({ income, expense });
+      }
+    } catch (error) {
+      console.error("Error calculating stats:", error);
+      setPeriodStats({ income: 0, expense: 0 });
+    }
+  }, [activeTab, startDate, endDate]);
+
   useEffect(() => {
     // Load today stats when component mounts
     calculatePeriodStats();
@@ -170,7 +254,7 @@ export default function RecordsScreen() {
     return () => {
       (global as any).refreshRecordsCallback = null;
     };
-  }, [calculatePeriodStats]);
+  }, [calculatePeriodStats, loadTransactions]);
 
   // Reload data when screen comes into focus
   useFocusEffect(
@@ -180,83 +264,7 @@ export default function RecordsScreen() {
     }, [loadTransactions, calculatePeriodStats])
   );
 
-  const calculatePeriodStats = useCallback(async () => {
-    try {
-      const now = new Date();
-      let periodStartDate: Date;
-      let periodEndDate: Date;
-
-      if (activeTab === "day") {
-        // Tính cho ngày hôm nay
-        periodStartDate = new Date(now.getFullYear(), now.getMonth(), now.getDate());
-        periodEndDate = new Date(now.getFullYear(), now.getMonth(), now.getDate(), 23, 59, 59, 999);
-      } else if (activeTab === "week") {
-        // Tính cho tuần (7 ngày từ hôm nay)
-        periodStartDate = new Date(now);
-        periodStartDate.setDate(now.getDate() - 6);
-        periodStartDate.setHours(0, 0, 0, 0);
-        periodEndDate = new Date(now);
-        periodEndDate.setHours(23, 59, 59, 999);
-      } else if (activeTab === "month") {
-        // Tính cho tháng hiện tại
-        periodStartDate = new Date(now.getFullYear(), now.getMonth(), 1);
-        periodStartDate.setHours(0, 0, 0, 0);
-        periodEndDate = new Date(now.getFullYear(), now.getMonth() + 1, 0);
-        periodEndDate.setHours(23, 59, 59, 999);
-      } else if (activeTab === "custom") {
-        // Tính cho khoảng thời gian tùy chọn
-        periodStartDate = new Date(startDate);
-        periodStartDate.setHours(0, 0, 0, 0);
-        periodEndDate = new Date(endDate);
-        periodEndDate.setHours(23, 59, 59, 999);
-      } else {
-        // Default to today
-        periodStartDate = new Date(now.getFullYear(), now.getMonth(), now.getDate());
-        periodEndDate = new Date(now.getFullYear(), now.getMonth(), now.getDate(), 23, 59, 59, 999);
-      }
-
-      console.log("Calculating stats for period:", {
-        activeTab,
-        startDate: periodStartDate.toISOString(),
-        endDate: periodEndDate.toISOString(),
-      });
-
-      // Load all transactions for the period
-      const response = await apiService.getTransactions(
-        1,
-        100, // Load more to ensure we get all transactions
-        periodStartDate.toISOString(),
-        periodEndDate.toISOString()
-      );
-
-      console.log("Stats response:", response);
-
-      if (response.status === 1 && response.data) {
-        let income = 0;
-        let expense = 0;
-
-        response.data.transactions.forEach((transaction) => {
-          console.log("Processing transaction:", {
-            amount: transaction.amount,
-            isIncome: transaction.isIncome,
-            date: transaction.date,
-          });
-
-          if (transaction.isIncome) {
-            income += transaction.amount;
-          } else {
-            expense += transaction.amount;
-          }
-        });
-
-        console.log("Stats calculated:", { income, expense });
-        setPeriodStats({ income, expense });
-      }
-    } catch (error) {
-      console.error("Error calculating stats:", error);
-      setPeriodStats({ income: 0, expense: 0 });
-    }
-  }, [activeTab, startDate, endDate]);
+  // duplicate removed
 
   const formatAmount = (amount: number) => {
     return amount.toLocaleString("vi-VN");
@@ -401,6 +409,10 @@ export default function RecordsScreen() {
   };
 
   const handleStartDateChange = (event: any, selectedDate?: Date) => {
+    if (Platform.OS === "ios") {
+      if (selectedDate) setTempStartDate(selectedDate);
+      return;
+    }
     setShowStartDatePicker(false);
     if (selectedDate) {
       setStartDate(selectedDate);
@@ -408,6 +420,10 @@ export default function RecordsScreen() {
   };
 
   const handleEndDateChange = (event: any, selectedDate?: Date) => {
+    if (Platform.OS === "ios") {
+      if (selectedDate) setTempEndDate(selectedDate);
+      return;
+    }
     setShowEndDatePicker(false);
     if (selectedDate) {
       setEndDate(selectedDate);
@@ -423,7 +439,10 @@ export default function RecordsScreen() {
       <View style={styles.dateRow}>
         <TouchableOpacity
           style={styles.dateInput}
-          onPress={() => setShowStartDatePicker(true)}
+          onPress={() => {
+            if (Platform.OS === "ios") setTempStartDate(startDate);
+            setShowStartDatePicker(true);
+          }}
         >
           <Text style={styles.dateText}>
             {formatDate(startDate.toISOString())}
@@ -436,7 +455,10 @@ export default function RecordsScreen() {
       <View style={styles.dateRow}>
         <TouchableOpacity
           style={styles.dateInput}
-          onPress={() => setShowEndDatePicker(true)}
+          onPress={() => {
+            if (Platform.OS === "ios") setTempEndDate(endDate);
+            setShowEndDatePicker(true);
+          }}
         >
           <Text style={styles.dateText}>
             {formatDate(endDate.toISOString())}
@@ -532,9 +554,16 @@ export default function RecordsScreen() {
             </Text>
             <Text style={styles.summaryDate}>
               {activeTab === "day" && formatDate(new Date().toISOString())}
-              {activeTab === "week" && `${formatDate(new Date(Date.now() - 6 * 24 * 60 * 60 * 1000).toISOString())} - ${formatDate(new Date().toISOString())}`}
-              {activeTab === "month" && `${new Date().getMonth() + 1}/${new Date().getFullYear()}`}
-              {activeTab === "custom" && `${formatDate(startDate.toISOString())} - ${formatDate(endDate.toISOString())}`}
+              {activeTab === "week" &&
+                `${formatDate(
+                  new Date(Date.now() - 6 * 24 * 60 * 60 * 1000).toISOString()
+                )} - ${formatDate(new Date().toISOString())}`}
+              {activeTab === "month" &&
+                `${new Date().getMonth() + 1}/${new Date().getFullYear()}`}
+              {activeTab === "custom" &&
+                `${formatDate(startDate.toISOString())} - ${formatDate(
+                  endDate.toISOString()
+                )}`}
             </Text>
           </View>
 
@@ -580,8 +609,8 @@ export default function RecordsScreen() {
         </View>
       </ScrollView>
 
-      {/* Date Pickers */}
-      {showStartDatePicker && (
+      {/* Date Pickers - Android inline */}
+      {showStartDatePicker && Platform.OS !== "ios" && (
         <DateTimePicker
           value={startDate}
           mode="date"
@@ -590,13 +619,94 @@ export default function RecordsScreen() {
         />
       )}
 
-      {showEndDatePicker && (
+      {showEndDatePicker && Platform.OS !== "ios" && (
         <DateTimePicker
           value={endDate}
           mode="date"
           display="default"
           onChange={handleEndDateChange}
         />
+      )}
+
+      {/* iOS Date Pickers - Modals */}
+      {Platform.OS === "ios" && (
+        <>
+          <Modal
+            visible={showStartDatePicker}
+            transparent
+            animationType="slide"
+            onRequestClose={() => setShowStartDatePicker(false)}
+          >
+            <View style={styles.modalBackdrop}>
+              <View style={styles.modalContainer}>
+                <View style={styles.modalHeader}>
+                  <TouchableOpacity
+                    onPress={() => setShowStartDatePicker(false)}
+                  >
+                    <Text style={styles.modalAction}>Hủy</Text>
+                  </TouchableOpacity>
+                  <Text style={styles.modalTitle}>Chọn ngày bắt đầu</Text>
+                  <TouchableOpacity
+                    onPress={() => {
+                      setStartDate(tempStartDate);
+                      setShowStartDatePicker(false);
+                    }}
+                  >
+                    <Text style={styles.modalAction}>Xong</Text>
+                  </TouchableOpacity>
+                </View>
+                <View style={styles.pickerContainer}>
+                  <DateTimePicker
+                    value={tempStartDate}
+                    mode="date"
+                    display="spinner"
+                    themeVariant="light"
+                    textColor="#000"
+                    onChange={handleStartDateChange}
+                    style={styles.iosPicker}
+                  />
+                </View>
+              </View>
+            </View>
+          </Modal>
+
+          <Modal
+            visible={showEndDatePicker}
+            transparent
+            animationType="slide"
+            onRequestClose={() => setShowEndDatePicker(false)}
+          >
+            <View style={styles.modalBackdrop}>
+              <View style={styles.modalContainer}>
+                <View style={styles.modalHeader}>
+                  <TouchableOpacity onPress={() => setShowEndDatePicker(false)}>
+                    <Text style={styles.modalAction}>Hủy</Text>
+                  </TouchableOpacity>
+                  <Text style={styles.modalTitle}>Chọn ngày kết thúc</Text>
+                  <TouchableOpacity
+                    onPress={() => {
+                      setEndDate(tempEndDate);
+                      setShowEndDatePicker(false);
+                    }}
+                  >
+                    <Text style={styles.modalAction}>Xong</Text>
+                  </TouchableOpacity>
+                </View>
+                <View style={styles.pickerContainer}>
+                  <DateTimePicker
+                    value={tempEndDate}
+                    mode="date"
+                    display="spinner"
+                    themeVariant="light"
+                    textColor="#000"
+                    onChange={handleEndDateChange}
+                    style={styles.iosPicker}
+                  />
+                </View>
+              </View>
+            </View>
+          </Modal>
+        </>
       )}
     </View>
   );
@@ -838,5 +948,43 @@ const styles = StyleSheet.create({
     fontSize: 16,
     color: "#999",
     marginTop: 10,
+  },
+  modalBackdrop: {
+    flex: 1,
+    backgroundColor: "rgba(0,0,0,0.3)",
+    justifyContent: "flex-end",
+  },
+  modalContainer: {
+    backgroundColor: "#fff",
+    borderTopLeftRadius: 12,
+    borderTopRightRadius: 12,
+    paddingBottom: 16,
+  },
+  modalHeader: {
+    flexDirection: "row",
+    justifyContent: "space-between",
+    alignItems: "center",
+    paddingHorizontal: 16,
+    paddingTop: 12,
+    paddingBottom: 8,
+    borderBottomWidth: 1,
+    borderBottomColor: "#eee",
+  },
+  modalTitle: {
+    fontSize: 16,
+    fontWeight: "600",
+    color: "#333",
+  },
+  modalAction: {
+    fontSize: 16,
+    color: "#27AE60",
+    fontWeight: "600",
+  },
+  iosPicker: {
+    marginTop: 4,
+  },
+  pickerContainer: {
+    height: 220,
+    justifyContent: "center",
   },
 });
